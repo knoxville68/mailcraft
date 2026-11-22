@@ -112,58 +112,199 @@ fn zones(groups: &[Group<'_>], paths: &[Vec<String>]) -> Vec<(String, std::ops::
     out
 }
 
+/// Which event of a server's document a [`Patch`] changes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Target<'a> {
+    /// The event, or the series: the one event without a `RECURRENCE-ID`.
+    Main,
+    /// A day of the series changed on its own already: the event with this `RECURRENCE-ID` value.
+    Changed(&'a str),
+    /// A day of the series changed on its own from now on, by its day as the series counts it
+    /// (`YYYYMMDD`): a new event for it, named as the series names its days.
+    New(&'a str),
+}
+
+/// One change to a server's document: the event `target` names becomes what `fresh` (a document
+/// [`crate::write_in`] made of one event as it is now) says of it.
+#[derive(Clone, Copy, Debug)]
+pub struct Patch<'a> {
+    pub target: Target<'a>,
+    pub fresh: &'a str,
+    /// More of the event's properties to take from `fresh` than [`REPLACED`]; `VALARM` takes its
+    /// alarms, the old ones all dropped.
+    pub also: &'a [&'a str],
+}
+
 /// `raw` (the server's document of one event) with the event's [`REPLACED`] properties taken from
-/// `fresh` (a document [`crate::write_in`] made of the event as it is now), its `SEQUENCE` one
-/// higher, and the zones `fresh` names that `raw` lacks added; everything else as it came. `also`
-/// names more of the event's properties to take from `fresh` (what else changed: `CATEGORIES`,
-/// `RRULE`…); `VALARM` takes its alarms, the old ones all dropped. `None` when either is not a
-/// whole calendar of exactly one event (a series with changed occurrences is not changed this way).
+/// `fresh`, its `SEQUENCE` one higher, and the zones `fresh` names that `raw` lacks added;
+/// everything else as it came. `None` when either is not a whole calendar, or `fresh` is not one
+/// event, or `raw` has no one event without a `RECURRENCE-ID`.
 pub fn patch_event(raw: &str, fresh: &str, also: &[&str]) -> Option<String> {
-    let (old, new) = (groups(raw)?, groups(fresh)?);
+    patch_resource(raw, &[Patch { target: Target::Main, fresh, also }], &[])
+}
+
+/// `raw` with each patch made in turn, and the days of the series changed on their own that
+/// `drop` names (by `RECURRENCE-ID` value) taken out. `None` when any of it can't be done: a
+/// document that isn't whole, an event that isn't there (or a new day that is), a patch that isn't
+/// of one event.
+pub fn patch_resource(raw: &str, patches: &[Patch<'_>], drop: &[&str]) -> Option<String> {
+    let mut doc = raw.to_string();
+    // (New days first: they are named by the series as the server has it.)
+    let (new, others): (Vec<&Patch<'_>>, Vec<&Patch<'_>>) = patches.iter().take(64).partition(|p| matches!(p.target, Target::New(_)));
+    for patch in new.into_iter().chain(others) {
+        doc = patch_one(&doc, patch)?;
+    }
+    if !drop.is_empty() {
+        doc = drop_days(&doc, drop)?;
+    }
+    Some(doc)
+}
+
+/// The events of a document: where each begins and ends (its `END`, inclusive), and its
+/// `RECURRENCE-ID` value when it has one.
+fn vevents(groups: &[Group<'_>], paths: &[Vec<String>]) -> Vec<(usize, usize, Option<String>)> {
+    let mut out = Vec::new();
+    let mut open: Option<(usize, Option<String>)> = None;
+    for (at, (g, path)) in groups.iter().zip(paths).enumerate() {
+        let top = path.len() == 1;
+        if top && g.name == "BEGIN" && value(g).eq_ignore_ascii_case("VEVENT") {
+            open = Some((at, None));
+        } else if top && g.name == "END" && value(g).eq_ignore_ascii_case("VEVENT") {
+            if let Some((begin, rid)) = open.take() {
+                out.push((begin, at, rid));
+            }
+        } else if g.name == "RECURRENCE-ID"
+            && is_event(path)
+            && let Some((_, rid)) = open.as_mut()
+        {
+            *rid = Some(value(g).to_string());
+        }
+    }
+    out
+}
+
+/// A content line as one line again (RFC 5545 section 3.1).
+fn unfolded(g: &Group<'_>) -> String {
+    let mut out = String::new();
+    for (n, line) in g.lines.iter().enumerate() {
+        out.push_str(if n == 0 { line } else { line.get(1..).unwrap_or_default() });
+    }
+    out
+}
+
+fn patch_one(raw: &str, patch: &Patch<'_>) -> Option<String> {
+    let (old, new) = (groups(raw)?, groups(patch.fresh)?);
     let (old_paths, new_paths) = (paths(&old)?, paths(&new)?);
-    if events(&old) != 1 || events(&new) != 1 {
+    if events(&new) != 1 {
         return None;
     }
-    let alarms = also.contains(&"VALARM");
+    let found = vevents(&old, &old_paths);
+    let mains: Vec<&(usize, usize, Option<String>)> = found.iter().filter(|(_, _, rid)| rid.is_none()).collect();
+    let [main] = mains.as_slice() else { return None };
+    let alarms = patch.also.contains(&"VALARM");
     let wanted = |g: &Group<'_>, p: &[String]| {
-        (alarms && in_alarm(g, p)) || (is_event(p) && (REPLACED.contains(&g.name.as_str()) || also.contains(&g.name.as_str())))
+        (alarms && in_alarm(g, p)) || (is_event(p) && (REPLACED.contains(&g.name.as_str()) || patch.also.contains(&g.name.as_str())))
     };
-    let taken: Vec<&Group<'_>> = new.iter().zip(&new_paths).filter(|(g, p)| wanted(g, p)).map(|(g, _)| g).collect();
     let have: Vec<String> = zones(&old, &old_paths).into_iter().map(|(tzid, _)| tzid).collect();
     let missing: Vec<std::ops::Range<usize>> =
         zones(&new, &new_paths).into_iter().filter(|(tzid, _)| !tzid.is_empty() && !have.contains(tzid)).map(|(_, r)| r).collect();
-    let sequence = old
-        .iter()
-        .zip(&old_paths)
-        .find(|(g, p)| is_event(p) && g.name == "SEQUENCE")
-        .and_then(|(g, _)| value(g).parse::<u32>().ok())
-        .map_or(1, |n| n.saturating_add(1));
-    let mut out = String::with_capacity(raw.len().saturating_add(fresh.len()));
+    let first_event = found.iter().map(|(begin, _, _)| *begin).min()?;
+    let mut out = String::with_capacity(raw.len().saturating_add(patch.fresh.len()));
     let mut push = |line: &str| {
         out.push_str(line);
         out.push_str("\r\n");
     };
-    for (g, path) in old.iter().zip(&old_paths) {
-        let opens_event = g.name == "BEGIN" && value(g).eq_ignore_ascii_case("VEVENT");
-        if opens_event {
-            for range in &missing {
-                for line in new.get(range.clone()).into_iter().flatten().flat_map(|g| g.lines.iter()) {
-                    push(line);
+    let zones_in = |push: &mut dyn FnMut(&str)| {
+        for range in &missing {
+            for line in new.get(range.clone()).into_iter().flatten().flat_map(|g| g.lines.iter()) {
+                push(line);
+            }
+        }
+    };
+    match patch.target {
+        Target::New(day) => {
+            if day.len() != 8 || !day.bytes().all(|b| b.is_ascii_digit()) {
+                return None;
+            }
+            // Named as the series names its days: its start, on that day.
+            let in_main = |name: &str| {
+                old.get(main.0..=main.1)?.iter().zip(old_paths.get(main.0..=main.1)?).find(|(g, p)| is_event(p) && g.name == name).map(|(g, _)| g)
+            };
+            let start = unfolded(in_main("DTSTART")?);
+            let (params, at) = start.split_once(':')?;
+            let rid = format!("RECURRENCE-ID{}:{day}{}", params.get("DTSTART".len()..)?, at.trim().get(8..)?);
+            if found.iter().any(|(_, _, r)| r.as_deref() == rid.split_once(':').map(|(_, v)| v)) {
+                return None;
+            }
+            let uid = in_main("UID")?;
+            let skip = ["UID", "RECURRENCE-ID", "RRULE", "RDATE", "EXDATE", "SEQUENCE"];
+            for (at, g) in old.iter().enumerate() {
+                if at == first_event {
+                    zones_in(&mut push);
+                }
+                let closes = g.name == "END" && value(g).eq_ignore_ascii_case("VCALENDAR") && old_paths.get(at).is_some_and(|p| p.is_empty());
+                if closes {
+                    push("BEGIN:VEVENT");
+                    uid.lines.iter().for_each(|l| push(l));
+                    push(&rid);
+                    for (g, p) in new.iter().zip(&new_paths) {
+                        let inside = is_event(p) || p.len() > 2;
+                        if inside && !(is_event(p) && skip.contains(&g.name.as_str())) {
+                            g.lines.iter().for_each(|l| push(l));
+                        }
+                    }
+                    push("END:VEVENT");
+                }
+                g.lines.iter().for_each(|l| push(l));
+            }
+        }
+        Target::Main | Target::Changed(_) => {
+            let range = match patch.target {
+                Target::Changed(rid) => found.iter().find(|(_, _, r)| r.as_deref() == Some(rid.trim()))?,
+                _ => *main,
+            };
+            let (begin, end) = (range.0, range.1);
+            let taken: Vec<&Group<'_>> = new.iter().zip(&new_paths).filter(|(g, p)| wanted(g, p)).map(|(g, _)| g).collect();
+            let sequence = old
+                .get(begin..=end)?
+                .iter()
+                .zip(old_paths.get(begin..=end)?)
+                .find(|(g, p)| is_event(p) && g.name == "SEQUENCE")
+                .and_then(|(g, _)| value(g).parse::<u32>().ok())
+                .map_or(1, |n| n.saturating_add(1));
+            for (at, (g, path)) in old.iter().zip(&old_paths).enumerate() {
+                if at == first_event {
+                    zones_in(&mut push);
+                }
+                let ours = (begin..=end).contains(&at);
+                if ours && at == end {
+                    for line in taken.iter().flat_map(|g| g.lines.iter()) {
+                        push(line);
+                    }
+                    push(&format!("SEQUENCE:{sequence}"));
+                }
+                let replaced = ours && (wanted(g, path) || (is_event(path) && g.name == "SEQUENCE"));
+                if !replaced {
+                    g.lines.iter().for_each(|l| push(l));
                 }
             }
         }
-        // (The END of the event is the event's own line: its path is the calendar's.)
-        let closes_event = g.name == "END" && value(g).eq_ignore_ascii_case("VEVENT") && path.len() == 1;
-        if closes_event {
-            for line in taken.iter().flat_map(|g| g.lines.iter()) {
-                push(line);
-            }
-            push(&format!("SEQUENCE:{sequence}"));
-        }
-        let replaced = wanted(g, path) || (is_event(path) && g.name == "SEQUENCE");
-        if !replaced {
+    }
+    Some(out)
+}
+
+/// `raw` without the days of its series changed on their own that `drop` names.
+fn drop_days(raw: &str, drop: &[&str]) -> Option<String> {
+    let old = groups(raw)?;
+    let found = vevents(&old, &paths(&old)?);
+    let gone: Vec<(usize, usize)> =
+        found.iter().filter(|(_, _, rid)| rid.as_deref().is_some_and(|r| drop.iter().any(|d| d.trim() == r))).map(|(b, e, _)| (*b, *e)).collect();
+    let mut out = String::with_capacity(raw.len());
+    for (at, g) in old.iter().enumerate() {
+        if !gone.iter().any(|(b, e)| (*b..=*e).contains(&at)) {
             for line in &g.lines {
-                push(line);
+                out.push_str(line);
+                out.push_str("\r\n");
             }
         }
     }

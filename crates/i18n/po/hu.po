@@ -431,11 +431,6 @@ msgstr "A MailCraft először biztonsági másolatot ment a teljes postafiók me
 msgid "A date"
 msgstr "Egy dátum"
 
-#. what a command says
-#: crates/engine/src/cmd/calendar.rs
-msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr ""
-
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/ShareLoad.kt
 #, fuzzy
@@ -657,7 +652,7 @@ msgstr "A kiszolgálóhoz nem sikerült biztonságos kapcsolatot létrehozni. Í
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+msgid "A series on a calendar server with days changed on their own keeps its times and its rule here: change those on the server, or change one day on its own."
 msgstr ""
 
 #. what a command says
@@ -11121,11 +11116,6 @@ msgstr "Ha egy adminisztrátor jóváhagyta, próbálja újra: a bejelentkezést
 #, fuzzy
 msgid "Once it has worked, your system's credential store keeps it for next time. It is never written to the mailbox."
 msgstr "Ha már működött, a rendszer hiteles boltja legközelebb megtartja."
-
-#. what a command says
-#: crates/engine/src/cmd/calendar.rs
-msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
-msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs

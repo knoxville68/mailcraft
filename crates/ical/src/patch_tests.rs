@@ -64,15 +64,53 @@ fn what_else_changed_is_taken_too_and_new_alarms_replace_the_old() {
 }
 
 #[test]
-fn a_document_of_more_than_one_event_or_out_of_order_is_not_changed() {
-    let two = RAW.replace(
-        "END:VEVENT\r\nEND:VCALENDAR",
-        "END:VEVENT\r\nBEGIN:VEVENT\r\nUID:abc-1\r\nRECURRENCE-ID:20261208T100000Z\r\nEND:VEVENT\r\nEND:VCALENDAR",
-    );
-    assert!(patch_event(&two, FRESH, &[]).is_none());
+fn a_document_out_of_order_or_without_one_main_event_is_not_changed() {
+    let two_mains = RAW.replace("END:VEVENT\r\nEND:VCALENDAR", "END:VEVENT\r\nBEGIN:VEVENT\r\nUID:other\r\nEND:VEVENT\r\nEND:VCALENDAR");
+    assert!(patch_event(&two_mains, FRESH, &[]).is_none());
     assert!(patch_event("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nEND:VCALENDAR\r\n", FRESH, &[]).is_none());
     assert!(patch_event(" folded first\r\n", FRESH, &[]).is_none());
     assert!(patch_event(RAW, "", &[]).is_none());
+}
+
+/// A series by Berlin's clock with its second day changed on its own.
+const SERIES: &str = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s-1\r\nDTSTART;TZID=Europe/Berlin:20261123T100000\r\nDTEND;TZID=Europe/Berlin:20261123T110000\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:s-1\r\nRECURRENCE-ID;TZID=Europe/Berlin:20261124T100000\r\nDTSTART;TZID=Europe/Berlin:20261124T120000\r\nDTEND;TZID=Europe/Berlin:20261124T130000\r\nSUMMARY:Verschoben\r\nX-KEEP:yes\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+
+fn one(summary: &str, day: &str) -> String {
+    format!(
+        "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:ignored#x\r\nDTSTART;TZID=Europe/Berlin:{day}T150000\r\nDTEND;TZID=Europe/Berlin:{day}T160000\r\nSUMMARY:{summary}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+}
+
+#[test]
+fn the_series_a_day_changed_already_and_a_new_day_are_each_changed_in_their_own_event() {
+    let (day2, day3) = (one("Später", "20261124"), one("Neu", "20261125"));
+    let patches = [
+        Patch { target: Target::Main, fresh: &FRESH.replace("Neu", "Serie neu"), also: &[] },
+        Patch { target: Target::Changed("20261124T100000"), fresh: &day2, also: &[] },
+        Patch { target: Target::New("20261125"), fresh: &day3, also: &[] },
+    ];
+    let out = patch_resource(SERIES, &patches, &[]).unwrap();
+    assert!(out.contains("RRULE:FREQ=DAILY;COUNT=5"), "the rule stays:\n{out}");
+    assert!(out.contains("SUMMARY:Serie neu") && out.contains("SUMMARY:Später") && !out.contains("Verschoben"), "{out}");
+    assert!(out.contains("X-KEEP:yes"), "what the changed day had stays");
+    // The new day is named as the series names its days, by the series' uid.
+    assert!(out.contains("UID:s-1\r\nRECURRENCE-ID;TZID=Europe/Berlin:20261125T100000\r\nDTSTART;TZID=Europe/Berlin:20261125T150000"), "{out}");
+    assert!(!out.contains("ignored#x"));
+    assert_eq!(out.matches("BEGIN:VEVENT").count(), 3);
+    let events = crate::parse(&out, &|_| 0).events;
+    assert_eq!(events.len(), 3);
+    // A day that is there already isn't new, and one that isn't there can't be changed.
+    assert!(patch_resource(SERIES, &[Patch { target: Target::New("20261124"), fresh: &day2, also: &[] }], &[]).is_none());
+    assert!(patch_resource(SERIES, &[Patch { target: Target::Changed("20261126T100000"), fresh: &day2, also: &[] }], &[]).is_none());
+    assert!(patch_resource(SERIES, &[Patch { target: Target::New("2026-11-25"), fresh: &day3, also: &[] }], &[]).is_none());
+}
+
+#[test]
+fn a_day_changed_on_its_own_is_taken_out_and_the_series_stays() {
+    let out = patch_resource(SERIES, &[], &["20261124T100000"]).unwrap();
+    assert!(!out.contains("Verschoben") && out.contains("SUMMARY:Serie"));
+    assert_eq!(out.matches("BEGIN:VEVENT").count(), 1);
+    assert_eq!(out.matches("END:VEVENT").count(), 1);
 }
 
 proptest! {
@@ -81,5 +119,6 @@ proptest! {
         let _ = patch_event(&raw, &fresh, &[]);
         let _ = patch_event(&raw, FRESH, &[]);
         let _ = patch_event(RAW, &fresh, &[]);
+        let _ = patch_resource(SERIES, &[Patch { target: Target::New("20261125"), fresh: &fresh, also: &["VALARM"] }], &[&raw]);
     }
 }

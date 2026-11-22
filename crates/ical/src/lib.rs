@@ -39,7 +39,7 @@ mod zones;
 use mailcraft_model::{Event, Task};
 use mailcraft_time::Timestamp;
 
-pub use patch::patch_event;
+pub use patch::{Patch, Target, patch_event, patch_resource};
 pub use read::{parse, parse_events};
 pub use rrule::{format_rrule, parse_rrule};
 pub use write::{write, write_in};

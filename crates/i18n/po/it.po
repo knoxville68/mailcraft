@@ -428,11 +428,6 @@ msgstr "Come sempre, prima viene salvata accanto a essa una copia dell'intera ca
 msgid "A date"
 msgstr "Una data"
 
-#. what a command says
-#: crates/engine/src/cmd/calendar.rs
-msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr ""
-
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/ShareLoad.kt
 #, fuzzy
@@ -653,7 +648,7 @@ msgstr "Non è stato possibile stabilire una connessione sicura con il server. S
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+msgid "A series on a calendar server with days changed on their own keeps its times and its rule here: change those on the server, or change one day on its own."
 msgstr ""
 
 #. what a command says
@@ -11121,11 +11116,6 @@ msgstr "Dopo l'approvazione di un amministratore, riprovare: l'accesso andrà a 
 #, fuzzy
 msgid "Once it has worked, your system's credential store keeps it for next time. It is never written to the mailbox."
 msgstr "Dopo che ha funzionato, l'archivio credenziali del sistema la conserva per la volta successiva. Non viene mai scritta nella cassetta postale."
-
-#. what a command says
-#: crates/engine/src/cmd/calendar.rs
-msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
-msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs

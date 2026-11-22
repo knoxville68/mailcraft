@@ -388,12 +388,6 @@ msgstr "Wie immer wird zuerst eine Kopie Ihres gesamten Postfachs daneben gespei
 msgid "A date"
 msgstr "Ein Datum"
 
-#. what a command says
-#: crates/engine/src/cmd/calendar.rs
-#, fuzzy
-msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr "Ein einzeln geänderter Tag einer Serie auf einem Kalender-Server lässt sich von hier aus noch nicht löschen: Löschen Sie die ganze Serie oder diesen Tag auf dem Server."
-
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/ShareLoad.kt
 #, fuzzy
@@ -609,8 +603,8 @@ msgstr "Es konnte keine sichere Verbindung zum Server hergestellt werden. Geben 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
 #, fuzzy
-msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
-msgstr "Eine Serie auf einem Kalender-Server mit einzeln geänderten Tagen lässt sich von hier aus noch nicht ändern: Ändern Sie sie auf dem Server."
+msgid "A series on a calendar server with days changed on their own keeps its times and its rule here: change those on the server, or change one day on its own."
+msgstr "Eine Serie auf einem Kalender-Server mit einzeln geänderten Tagen behält hier ihre Zeiten und ihre Regel: Ändern Sie diese auf dem Server, oder ändern Sie einen einzelnen Tag für sich."
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -10445,12 +10439,6 @@ msgstr "Sobald ein Administrator genehmigt hat, versuchen Sie es erneut: Dann kl
 #, fuzzy
 msgid "Once it has worked, your system's credential store keeps it for next time. It is never written to the mailbox."
 msgstr "Sobald es funktioniert hat, bewahrt der Anmeldeinformationsspeicher Ihres Systems es für das nächste Mal auf. Es wird nie in das Postfach geschrieben."
-
-#. what a command says
-#: crates/engine/src/cmd/calendar.rs
-#, fuzzy
-msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
-msgstr "Ein einzelner Tag einer Serie auf einem Kalender-Server lässt sich von hier aus noch nicht für sich ändern: Ändern Sie die ganze Serie oder diesen Tag auf dem Server."
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -24339,6 +24327,18 @@ msgstr "−Bin"
 #, fuzzy
 msgid "−Lines"
 msgstr "−Zeilen"
+
+#, fuzzy
+#~ msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+#~ msgstr "Ein einzeln geänderter Tag einer Serie auf einem Kalender-Server lässt sich von hier aus noch nicht löschen: Löschen Sie die ganze Serie oder diesen Tag auf dem Server."
+
+#, fuzzy
+#~ msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+#~ msgstr "Eine Serie auf einem Kalender-Server mit einzeln geänderten Tagen lässt sich von hier aus noch nicht ändern: Ändern Sie sie auf dem Server."
+
+#, fuzzy
+#~ msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
+#~ msgstr "Ein einzelner Tag einer Serie auf einem Kalender-Server lässt sich von hier aus noch nicht für sich ändern: Ändern Sie die ganze Serie oder diesen Tag auf dem Server."
 
 #, fuzzy
 #~ msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."

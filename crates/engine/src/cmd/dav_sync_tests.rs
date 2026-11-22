@@ -1042,44 +1042,73 @@ fn what_mailcraft_knows_of_a_servers_event_changes_from_here_and_the_rest_is_ref
     let _ = std::fs::remove_dir_all(dir);
 }
 
-/// A series on the server, read in with its document kept: the session, the account, the series and the folder.
-fn series_kept(tag: &str) -> (Session, Id, Id, std::path::PathBuf) {
+/// A document on the server, read in and kept: the session, the account and the folder.
+fn kept_doc(tag: &str, doc: &str) -> (Session, Id, std::path::PathBuf) {
     let dir = std::env::temp_dir().join(format!("mc-dav-series-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let (mut s, id) = session();
     s.path = Some(dir.join("mailbox.mailcraft"));
-    let doc = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nX-OTHER:kept\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
     apply(&mut s, id, Some(listing()), vec![read(vec![change("a.ics", "\"8\"", doc)], true, true, "t1")]);
-    let e = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
-    (s, id, e, dir)
+    (s, id, dir)
 }
 
+fn by_title(s: &Session, title: &str) -> Id {
+    s.mailbox.events.values().find(|e| e.title == title).unwrap().id
+}
+
+const SERIES: &str = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nX-OTHER:kept\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+
 #[test]
-fn a_day_of_a_servers_series_is_skipped_by_the_series_there_and_the_whole_series_changes() {
-    let (mut s, id, serie, dir) = series_kept("skip");
+fn a_day_of_a_servers_series_is_skipped_or_changed_on_its_own_in_the_series_document() {
+    let (mut s, id, dir) = kept_doc("skip", SERIES);
+    let serie = by_title(&s, "Serie");
     s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-24"})).unwrap();
     assert!(deletes(&mut s, id).is_empty(), "the series stays, without that day");
     let up = updates(&mut s, id);
     assert_eq!(up.len(), 1);
     let body = &up[0].body;
     assert!(body.contains("EXDATE") && body.contains("20261124") && body.contains("RRULE:") && body.contains("X-OTHER:kept"), "{body}");
-    // The whole series may be retitled; one day of it on its own may not be changed yet.
+    // The whole series retitled, and one day of it changed on its own: one document for all of it.
     s.run("calendar.edit", &json!({"id": serie, "title": "Neue Serie"})).unwrap();
-    assert!(updates(&mut s, id)[0].body.contains("SUMMARY:Neue Serie"));
-    assert!(s.run("calendar.edit", &json!({"id": serie, "scope": "occurrence", "occurrence": "2026-11-25", "title": "Nur heute"})).is_err());
+    s.run("calendar.edit", &json!({"id": serie, "scope": "occurrence", "occurrence": "2026-11-25", "title": "Nur heute"})).unwrap();
+    let up = updates(&mut s, id);
+    assert_eq!(up.len(), 1, "{up:?}");
+    let body = &up[0].body;
+    assert!(body.contains("SUMMARY:Neue Serie") && body.contains("SUMMARY:Nur heute"), "{body}");
+    assert!(body.contains("UID:s\r\nRECURRENCE-ID:20261125T100000Z\r\n"), "named as the series names its days:\n{body}");
+    assert!(!body.contains("20261125T100000Z,") && !body.contains("EXDATE:20261125"), "a day of its own isn't skipped:\n{body}");
+    // Taken: nothing waits any more.
+    update_answer(&mut s, id, mailcraft_model::DavPutOver::Done);
+    assert!(updates(&mut s, id).is_empty());
     let _ = std::fs::remove_dir_all(dir);
 }
 
 #[test]
-fn a_servers_series_with_a_day_changed_on_its_own_stays_as_the_server_has_it() {
-    let (mut s, id) = session();
-    let doc = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:s\r\nRECURRENCE-ID:20261124T100000Z\r\nDTSTART:20261124T120000Z\r\nDTEND:20261124T130000Z\r\nSUMMARY:Verschoben\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
-    apply(&mut s, id, Some(listing()), vec![read(vec![change("a.ics", "\"8\"", doc)], true, true, "t1")]);
-    let serie = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
-    let moved = s.mailbox.events.values().find(|e| e.title == "Verschoben").unwrap().id;
-    assert!(s.run("calendar.edit", &json!({"id": serie, "title": "Anders"})).is_err());
-    assert!(s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-25"})).is_err());
-    assert!(s.run("calendar.delete", &json!({"id": moved})).is_err());
-    assert!(updates(&mut s, id).is_empty() && deletes(&mut s, id).is_empty());
+fn a_day_a_servers_series_changed_on_its_own_is_changed_or_deleted_there() {
+    let doc = SERIES.replace(
+        "END:VEVENT\r\nEND:VCALENDAR",
+        "END:VEVENT\r\nBEGIN:VEVENT\r\nUID:s\r\nRECURRENCE-ID:20261124T100000Z\r\nDTSTART:20261124T120000Z\r\nDTEND:20261124T130000Z\r\nSUMMARY:Verschoben\r\nX-DAY:kept\r\nEND:VEVENT\r\nEND:VCALENDAR",
+    );
+    let (mut s, id, dir) = kept_doc("days", &doc);
+    let (serie, moved) = (by_title(&s, "Serie"), by_title(&s, "Verschoben"));
+    // The series keeps its times while a day of it is changed on its own.
+    assert!(s.run("calendar.move", &json!({"id": serie, "scope": "series", "start": "2026-11-23T14:00"})).is_err());
+    s.run("calendar.edit", &json!({"id": serie, "title": "Anders"})).unwrap();
+    s.run("calendar.edit", &json!({"id": moved, "title": "Noch später"})).unwrap();
+    let body = updates(&mut s, id)[0].body.clone();
+    assert!(body.contains("SUMMARY:Anders") && body.contains("SUMMARY:Noch später") && body.contains("X-DAY:kept"), "{body}");
+    assert!(!body.contains("EXDATE"), "the changed day isn't skipped:\n{body}");
+    update_answer(&mut s, id, mailcraft_model::DavPutOver::Done);
+    // Deleted: out of the document, and the series skips it.
+    s.run("calendar.delete", &json!({"id": moved})).unwrap();
+    assert!(deletes(&mut s, id).is_empty(), "the series' document stays");
+    let body = updates(&mut s, id)[0].body.clone();
+    assert!(!body.contains("RECURRENCE-ID") && body.contains("EXDATE:20261124T100000Z"), "{body}");
+    // Refused: the server keeps the day, and so does this computer.
+    let r = update_answer(&mut s, id, mailcraft_model::DavPutOver::Refused);
+    assert_eq!(r["kept"], json!(["Noch später"]));
+    assert!(titles(&s).contains(&"Noch später".to_string()));
+    assert!(updates(&mut s, id).is_empty());
+    let _ = std::fs::remove_dir_all(dir);
 }

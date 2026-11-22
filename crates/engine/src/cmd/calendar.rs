@@ -113,17 +113,12 @@ fn changing(s: &Session, v: &Value) -> Result<Event, CmdError> {
 }
 
 /// The event to delete when it is in a calendar of a calendar server that may be written to (#209
-/// D6): a whole event or series, or one day of a series (which the series then skips), not a day
-/// changed on its own, and not a meeting (its server could send the cancellations by itself).
+/// D6): a whole event or series, or one day of a series (which the series then skips), and not a
+/// meeting (its server could send the cancellations by itself).
 /// `None` for any other event, which [`changing`] looks at.
 fn dav_deleting(s: &Session, v: &Value) -> Result<Option<Event>, CmdError> {
     let id = target(s, v)?;
     let Some(e) = s.mailbox.event(id).filter(|e| remote::dav_addable(&s.mailbox, e.calendar)).cloned() else { return Ok(None) };
-    if !e.origin.series.is_empty() {
-        return Err(fail(
-            "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server.",
-        ));
-    }
     if !e.attendees.is_empty() || e.origin.guest {
         return Err(fail("A meeting on a calendar server can't be deleted from here yet: the server could send cancellations by itself."));
     }
@@ -554,11 +549,6 @@ fn change_one(s: &mut Session, v: &Value, series: &Event, day: Date, changed: Ev
         return Err(fail("this series has too many changed days"));
     }
     let kept = kept_by(s, series).is_some();
-    if remote::dav_addable(&s.mailbox, series.calendar) {
-        return Err(fail(
-            "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server.",
-        ));
-    }
     if kept && series.origin.id.is_empty() {
         return Err(fail("This series is still on its way to the account's server. Change one of its days once it is there (in a moment)."));
     }
@@ -610,9 +600,15 @@ fn change_one(s: &mut Session, v: &Value, series: &Event, day: Date, changed: Ev
         None if kept => may_change(s, v, &was, &one)?,
         None => false,
     };
+    let dav = kept && remote::dav_addable(&s.mailbox, series.calendar);
+    if dav {
+        remote::dav_changeable(&s.mailbox, &was, &one)?;
+    }
     s.mailbox.event_mut(series.id)?.exceptions.push(day);
     let id = s.mailbox.add_event(one)?;
-    if kept {
+    if dav {
+        remote::note_dav_day(s, series, day, id, was)?;
+    } else if kept {
         remote::note_occurrence_changed(s, series, day, id, Event { id, ..was }, send)?;
     }
     s.sel.event = Some(id);

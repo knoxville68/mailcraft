@@ -36,9 +36,11 @@
 
 use std::collections::{HashMap, HashSet};
 
+use mailcraft_time::Date;
+
 use mailcraft_model::dav_down::{MAX_ACCOUNT_RESOURCES, MAX_CHANGES, MAX_KNOWN, MAX_READ, MAX_RESOURCES};
 use mailcraft_model::remote::MAX_KEY;
-use mailcraft_model::remote::{EventChangeKind, MAX_EVENT_OPS};
+use mailcraft_model::remote::{EventChange, EventChangeKind, MAX_EVENT_OPS};
 use mailcraft_model::{
     Calendar, DavAsk, DavAskCollection, DavChange, DavCollectionState, DavCreate, DavCreated, DavDelete, DavDeleted, DavDownload, DavGone, DavKnown,
     DavListing, DavProblem, DavPut, DavPutOver, DavRead, DavReadState, DavServer, DavUpdate, DavUpdated, Event, Id, Origin, Rights, origin_of,
@@ -160,7 +162,8 @@ fn deletes(s: &Session, account: Id, collections: &[DavAskCollection]) -> Vec<Da
         }
         let Some(base) = change.base.as_deref() else { continue };
         let Some(collection) = collections.iter().find(|c| within(&c.href, &change.remote)) else { continue };
-        if base.origin.change_key.is_empty() || base.origin.id != change.remote {
+        // (A day of a series changed on its own goes out of the series' document: [`updates`].)
+        if base.origin.change_key.is_empty() || base.origin.id != change.remote || change.remote.contains('#') {
             continue;
         }
         out.push(DavDelete { collection: collection.href.clone(), href: change.remote.clone(), etag: base.origin.change_key.clone() });
@@ -168,33 +171,117 @@ fn deletes(s: &Session, account: Id, collections: &[DavAskCollection]) -> Vec<Da
     out
 }
 
-/// The events of the account's calendar servers changed here (#209 D6), each as the server's own
-/// document with what changed written into it ([`mailcraft_ical::patch_event`]), to be put over
-/// the resource only while it has the ETag the change was made on; [`MAX_EVENT_OPS`] at most.
+/// The events of the account's calendar servers changed here (#209 D6), as the server's own
+/// documents with what changed written into them ([`mailcraft_ical::patch_resource`]): a series,
+/// the days of it changed on their own, the days of it that are new or gone, all in one document,
+/// to be put over the resource only while it has the ETag the change was made on;
+/// [`MAX_EVENT_OPS`] documents at most.
 // shortcut: a change whose document isn't kept here (no mailbox file, or let go of for room) waits;
 // read the document from the server first when that is seen to happen.
 fn updates(s: &Session, account: Id, collections: &[DavAskCollection]) -> Vec<DavUpdate> {
     let Some(file) = s.path.as_deref() else { return Vec::new() };
     let now = s.now();
-    let mut out = Vec::new();
-    for change in s.mailbox.event_changes.iter().filter(|c| c.account == account && c.kind == EventChangeKind::Update && c.retry_at <= now) {
-        if out.len() >= MAX_EVENT_OPS {
-            break;
+    let mut resources: Vec<&str> = Vec::new();
+    for change in s.mailbox.event_changes.iter().filter(|c| c.account == account && c.retry_at <= now && of_document(c)) {
+        let resource = resource_of(&change.remote);
+        if !resources.contains(&resource) && resources.len() < MAX_EVENT_OPS {
+            resources.push(resource);
         }
-        let Some(event) = s.mailbox.event(change.event).filter(|e| e.origin.id == change.remote) else { continue };
-        let Some(collection) = collections.iter().find(|c| within(&c.href, &change.remote)) else { continue };
-        let etag = change.base.as_deref().map(|b| b.origin.change_key.clone()).unwrap_or_else(|| event.origin.change_key.clone());
-        if etag.is_empty() || !super::remote::dav_addable(&s.mailbox, event.calendar) {
-            continue;
-        }
-        let Some(raw) = crate::dav_raw::read(file, account, &change.remote) else { continue };
-        let opts = mailcraft_ical::WriteOptions { method: String::new(), now };
-        let fresh = mailcraft_ical::write_in(&[event], &[], &opts, Some(s.zone()));
-        let base = change.base.as_deref().unwrap_or(event);
-        let Some(body) = mailcraft_ical::patch_event(&raw, &fresh, &also_changed(base, event)) else { continue };
-        out.push(DavUpdate { collection: collection.href.clone(), href: change.remote.clone(), etag, body });
     }
-    out
+    resources.into_iter().filter_map(|resource| update_of(s, file, account, collections, resource)).collect()
+}
+
+/// Whether a change goes to the server as a new version of a document: an event changed, or a day
+/// of a series changed on its own deleted.
+fn of_document(c: &EventChange) -> bool {
+    c.kind == EventChangeKind::Update || (c.kind == EventChangeKind::Delete && c.remote.contains('#'))
+}
+
+fn update_of(s: &Session, file: &std::path::Path, account: Id, collections: &[DavAskCollection], resource: &str) -> Option<DavUpdate> {
+    let now = s.now();
+    let mb = &s.mailbox;
+    let collection = collections.iter().find(|c| within(&c.href, resource))?;
+    let mine: Vec<&EventChange> = mb
+        .event_changes
+        .iter()
+        .filter(|c| c.account == account && c.retry_at <= now && of_document(c) && resource_of(&c.remote) == resource)
+        .collect();
+    let main = mb.events.values().find(|e| e.origin.account == account && e.origin.id == resource)?;
+    if !super::remote::dav_addable(mb, main.calendar) {
+        return None;
+    }
+    let etag = mine.iter().filter_map(|c| c.base.as_deref()).map(|b| b.origin.change_key.clone()).find(|k| !k.is_empty())?;
+    let raw = crate::dav_raw::read(file, account, resource)?;
+    let opts = mailcraft_ical::WriteOptions { method: String::new(), now };
+    // The series' days that are events of their own: the series doesn't skip them in its document.
+    let own_days: Vec<Date> =
+        mb.events.values().filter(|e| e.origin.account == account && e.origin.series == resource).filter_map(|e| e.origin.occurrence).collect();
+    let written = |event: &Event| {
+        let mut event = event.clone();
+        event.exceptions.retain(|day| !own_days.contains(day));
+        mailcraft_ical::write_in(&[&event], &[], &opts, Some(s.zone()))
+    };
+    let drop: Vec<&str> =
+        mine.iter().filter(|c| c.kind == EventChangeKind::Delete).filter_map(|c| c.base.as_deref()).filter_map(|b| rid_of(&b.uid)).collect();
+    // (target, its document, the properties besides those always written)
+    let mut parts: Vec<(Part, String, Vec<&'static str>)> = Vec::new();
+    for change in mine.iter().filter(|c| c.kind == EventChangeKind::Update) {
+        let Some(event) = mb.event(change.event).filter(|e| e.origin.id == change.remote) else { continue };
+        let base = change.base.as_deref().unwrap_or(event);
+        let part = if event.origin.series.is_empty() {
+            Part::Main
+        } else if let Some(rid) = rid_of(&event.uid) {
+            Part::Changed(rid.to_string())
+        } else {
+            let day = event.origin.occurrence?;
+            Part::New(format!("{:04}{:02}{:02}", day.year, day.month, day.day))
+        };
+        parts.push((part, written(event), also_changed(base, event)));
+    }
+    // A day gone from the series is one it skips.
+    if mine.iter().any(|c| c.kind == EventChangeKind::Delete) {
+        match parts.iter_mut().find(|(p, _, _)| *p == Part::Main) {
+            Some((_, _, also)) if !also.contains(&"EXDATE") => also.push("EXDATE"),
+            Some(_) => {}
+            None => parts.push((Part::Main, written(main), vec!["EXDATE"])),
+        }
+    }
+    let patches: Vec<mailcraft_ical::Patch<'_>> = parts
+        .iter()
+        .map(|(part, fresh, also)| mailcraft_ical::Patch {
+            target: match part {
+                Part::Main => mailcraft_ical::Target::Main,
+                Part::Changed(rid) => mailcraft_ical::Target::Changed(rid),
+                Part::New(day) => mailcraft_ical::Target::New(day),
+            },
+            fresh,
+            also,
+        })
+        .collect();
+    let body = mailcraft_ical::patch_resource(&raw, &patches, &drop)?;
+    Some(DavUpdate { collection: collection.href.clone(), href: resource.to_string(), etag, body })
+}
+
+/// Which event of a series' document a change is to.
+#[derive(PartialEq)]
+enum Part {
+    Main,
+    Changed(String),
+    New(String),
+}
+
+/// The `RECURRENCE-ID` a day of a series changed on its own is named by: its uid is the series'
+/// and that, apart by a `#` ([`mailcraft_ical::parse`]).
+fn rid_of(uid: &str) -> Option<&str> {
+    uid.rsplit_once('#').map(|(_, rid)| rid).filter(|rid| !rid.is_empty())
+}
+
+/// The day of the series a `RECURRENCE-ID` names.
+// shortcut: its date as written, which for one by UTC (`…Z`) may be a day off the series' own
+// clock near midnight; read it by the series' zone when that is seen to matter.
+fn day_of_rid(rid: &str) -> Option<Date> {
+    let digits = |r: std::ops::Range<usize>| rid.get(r).filter(|d| d.bytes().all(|b| b.is_ascii_digit())).and_then(|d| d.parse::<u32>().ok());
+    Date::new(i32::try_from(digits(0..4)?).ok()?, u8::try_from(digits(4..6)?).ok()?, u8::try_from(digits(6..8)?).ok()?)
 }
 
 /// The properties of the event, besides those always written anew, that differ from what its
@@ -226,25 +313,31 @@ fn also_changed(base: &Event, now: &Event) -> Vec<&'static str> {
 fn take_updated(s: &mut Session, account: Id, updated: &[DavUpdated], took: &mut Took) -> bool {
     let mut changed = false;
     for answer in updated.iter().take(MAX_EVENT_OPS) {
-        let at = s.mailbox.event_changes.iter().position(|c| c.account == account && c.kind == EventChangeKind::Update && c.remote == answer.href);
-        let Some(at) = at else { continue };
         if answer.outcome == DavPutOver::NotNow {
             continue;
         }
-        let change = s.mailbox.event_changes.remove(at);
-        if answer.outcome != DavPutOver::Done {
+        let ours = |c: &EventChange| c.account == account && of_document(c) && resource_of(&c.remote) == answer.href;
+        let (mine, rest): (Vec<EventChange>, Vec<EventChange>) = std::mem::take(&mut s.mailbox.event_changes).into_iter().partition(|c| ours(c));
+        s.mailbox.event_changes = rest;
+        for change in mine {
+            changed = true;
+            if answer.outcome == DavPutOver::Done {
+                continue;
+            }
             took.kept.push(change.base.as_ref().map(|b| b.title.clone()).unwrap_or_default());
+            let Some(base) = change.base else { continue };
+            if change.kind == EventChangeKind::Delete {
+                // (The day comes back as the server still has it.)
+                let _ = s.mailbox.add_event(Event { id: 0, ..*base });
+            } else if answer.outcome == DavPutOver::Refused
+                && let Ok(e) = s.mailbox.event_mut(change.event)
+                && e.origin.id == change.remote
+            {
+                let id = e.id;
+                *e = *base;
+                e.id = id;
+            }
         }
-        if answer.outcome == DavPutOver::Refused
-            && let Some(base) = change.base
-            && let Ok(e) = s.mailbox.event_mut(change.event)
-            && e.origin.id == answer.href
-        {
-            let id = e.id;
-            *e = *base;
-            e.id = id;
-        }
-        changed = true;
     }
     changed
 }
@@ -806,7 +899,7 @@ fn take_read(
         .mailbox
         .event_changes
         .iter()
-        .filter(|c| c.account == account && c.kind == EventChangeKind::Delete)
+        .filter(|c| c.account == account && c.kind == EventChangeKind::Delete && !c.remote.contains('#'))
         .map(|c| resource_of(&c.remote).to_string())
         .collect();
     for change in read.changes.iter().take(MAX_CHANGES) {
@@ -865,7 +958,7 @@ fn take_read(
                 series: if key == change.href { String::new() } else { change.href.clone() },
                 guest: !owner.is_empty()
                     && event.organizer.as_ref().is_some_and(|o| !o.email.trim().is_empty() && !o.email.trim().eq_ignore_ascii_case(&owner)),
-                occurrence: None,
+                occurrence: if key == change.href { None } else { rid_of(&event.uid).and_then(day_of_rid) },
             };
             tidy(&mut event);
             match here.get(&key).copied() {
