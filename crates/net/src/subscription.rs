@@ -107,7 +107,10 @@ fn conditions(etag: &str, last_modified: &str) -> String {
 /// [`fetch`], with the reach and the limits said.
 pub(crate) fn fetch_with(address: &str, etag: &str, last_modified: &str, reach: &Reach<'_>, limits: &Limits) -> Result<Fetched, Failure> {
     let deadline = Instant::now() + limits.patience;
-    let first = pictures::address(address).map_err(|_| Failure::Address)?;
+    // A `webcal://` address (as it was subscribed to, and kept) is read over `https://`, as the
+    // check at subscribing says; one that isn't fit stays as it is, and is refused below.
+    let checked = mailcraft_model::subscription::check_address(address).ok().map(|c| c.url);
+    let first = pictures::address(checked.as_deref().unwrap_or(address)).map_err(|_| Failure::Address)?;
     if !first.secure {
         return Err(Failure::Address);
     }
