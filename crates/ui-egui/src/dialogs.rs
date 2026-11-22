@@ -76,6 +76,9 @@ pub enum Dialog {
     /// Internet…, #209): it only collects the address, then runs `calendar.subscribe`
     /// ([`crate::subscribed`]). The address is a secret like a password: it is not shown back in
     /// any message, and is never in a log.
+    /// Where an account's calendars are (#209, behind `MAILCRAFT_DAV=1`): a provider or a server,
+    /// and the sign-in for it ([`crate::dav_setup`]).
+    DavServer(crate::dav_setup::DavForm),
     Subscribe {
         address: String,
         name: String,
@@ -268,6 +271,7 @@ impl Dialog {
             Dialog::SharedMailbox { .. } => "sharedMailbox",
             Dialog::OpenCalendar { .. } => "openCalendar",
             Dialog::Subscribe { .. } => "subscribe",
+            Dialog::DavServer(_) => "davServer",
             Dialog::Link { .. } => "link",
             Dialog::DateTime { .. } => "dateTime",
             Dialog::WordCount { .. } => "wordCount",
@@ -369,6 +373,17 @@ impl Dialog {
                 };
                 let address = params.get("address").and_then(Value::as_str).unwrap_or_default().to_string();
                 Dialog::OpenCalendar { account, address, error: String::new(), reading: None }
+            }
+            "davServer" => {
+                if !app.session.dav_enabled {
+                    return None;
+                }
+                let mailbox = &app.session.mailbox;
+                let account = match id("account") {
+                    Some(id) => mailbox.account(id)?,
+                    None => mailbox.default_account()?,
+                };
+                Dialog::DavServer(crate::dav_setup::DavForm::new(account))
             }
             "subscribe" => Dialog::Subscribe {
                 address: params.get("address").and_then(Value::as_str).unwrap_or_default().to_string(),
@@ -1829,6 +1844,7 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                 }
             }
         }
+        Dialog::DavServer(form) => close |= crate::dav_setup::form(app, ctx, enter, form),
         Dialog::Subscribe { address, name, error, offer } => {
             let mut submit = false;
             let mut use_offer = false;

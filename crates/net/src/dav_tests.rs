@@ -1098,3 +1098,52 @@ fn r_a_member_that_can_never_be_had_is_said_without_its_document() {
     assert_eq!(work.changes.len(), 1);
     assert!(work.changes[0].raw.is_none() && work.changes[0].etag == "\"1\"", "so that it is not asked for at every run");
 }
+
+/// An account laid out as iCloud lays one out: the home on a numbered host of the provider
+/// (`p07-caldav.icloud.com`), named by the server with the default port written out (`:443`),
+/// beside a reminders list (to-dos only) and events in Apple's own properties, a series with a
+/// changed occurrence and a day-long event. The stand-in plays the numbered host.
+#[test]
+fn an_icloud_shaped_home_on_a_numbered_host_is_read_whole_and_only_that_host_gets_the_password() {
+    const SHARD: &str = "https://p07-caldav.icloud.com";
+    let s = StandIn::new(SHARD, USER, PASSWORD).unwrap();
+    s.add_calendar("home", "Home", false);
+    s.add_calendar("family", "Family", true);
+    s.add_task_list("reminders", "Reminders");
+    let series = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Example Corp.//Calendar 1.0//EN\r\nBEGIN:VEVENT\r\nUID:series-1\r\nDTSTART:20261201T090000Z\r\nRRULE:FREQ=WEEKLY;COUNT=4\r\nSUMMARY:Standup\r\nX-APPLE-TRAVEL-ADVISORY-BEHAVIOR:AUTOMATIC\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:series-1\r\nRECURRENCE-ID:20261208T090000Z\r\nDTSTART:20261208T100000Z\r\nSUMMARY:Standup (moved)\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+    let all_day = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:day-1\r\nDTSTART;VALUE=DATE:20261224\r\nDTEND;VALUE=DATE:20261225\r\nSUMMARY:Holiday\r\nX-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-TITLE=Home:geo:0,0\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+    s.put_directly("home", "series-1.ics", series).unwrap();
+    s.put_directly("home", "day-1.ics", all_day).unwrap();
+    s.put_directly("family", "e.ics", &event("e", "20261205T180000Z")).unwrap();
+    let todo = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VTODO\r\nUID:todo-1\r\nSUMMARY:Milk\r\nEND:VTODO\r\nEND:VCALENDAR\r\n";
+    s.put_directly("reminders", "todo-1.ics", todo).unwrap();
+    // The home as iCloud names it: the default port written out.
+    let home = format!("{SHARD}:443/dav/cal/owner/");
+    let ask =
+        DavAsk { account: 7, email: "owner@icloud.example".into(), username: USER.into(), homes: vec![home], list_homes: true, ..Default::default() };
+    let held = Held::new(Some(PASSWORD));
+    let out = run(&ask, &held.lookup(), &s, NOW, &Limits::default());
+    assert!(s.violations().is_empty(), "{:?}", s.violations());
+    assert_eq!(out.problem, DavProblem::None);
+    let listing = out.listing.as_ref().unwrap();
+    let mut listed: Vec<(&str, bool)> = listing.calendars.iter().map(|c| (c.name.as_str(), c.read_only)).collect();
+    listed.sort();
+    assert_eq!(listed, vec![("Family", true), ("Home", false)], "the reminders list is no calendar of events");
+    assert!(listing.complete && !listing.capped);
+    let home = out.collections.iter().find(|c| c.href == s.collection_url("home")).expect("the home calendar, at the address without the port");
+    assert_eq!(names(home), vec!["day-1.ics", "series-1.ics"]);
+    assert!(home.complete);
+    // Each document comes down whole, Apple's properties and the changed occurrence with it (its
+    // line ends as XML gives them: CRLF read as LF, XML 1.0 §2.11).
+    let raw = |name: &str| home.changes.iter().find(|c| c.href.ends_with(name)).and_then(|c| c.raw.clone()).unwrap().replace("\r\n", "\n");
+    assert_eq!(raw("series-1.ics"), series.replace("\r\n", "\n"));
+    assert_eq!(raw("day-1.ics"), all_day.replace("\r\n", "\n"));
+    assert!(out.collections.iter().any(|c| c.href == s.collection_url("family") && names(c) == ["e.ics"]));
+    assert!(out.collections.iter().all(|c| c.href != s.collection_url("reminders")), "nothing read from the reminders list");
+    // One origin, the numbered host's, with and without the port the same; the password was
+    // asked for once, for it alone, and only after its own challenge.
+    assert_eq!(out.signed_in, vec![SHARD.to_string()]);
+    assert_eq!(*held.asked.borrow(), vec![SHARD.to_string()]);
+    let seen = s.seen();
+    assert!(!seen[0].credential && seen.iter().skip(1).all(|r| r.authorized));
+}

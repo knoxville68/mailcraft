@@ -329,6 +329,19 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             });
             ui.add_space(8.0);
         }
+        // Where its calendars are, on a calendar server (#209, behind `MAILCRAFT_DAV=1`).
+        // (Not for a shared mailbox, nor an account whose calendars come with it.)
+        if app.session.dav_enabled && !a.is_shared() && matches!(a.kind, AccountKind::Imap | AccountKind::Local) {
+            ui.horizontal(|ui| {
+                ui.add_space(12.0);
+                let label = if a.dav.is_some() { tl!("Calendar Server (connected)…") } else { tl!("Calendar Server…") };
+                let link = ui.link(label).on_hover_text(tl!("Read this account's calendars from iCloud, Fastmail or another calendar server"));
+                if link.clicked() {
+                    let _ = app.run("ui.dialog", json!({"name": "davServer", "account": a.id}));
+                }
+            });
+            ui.add_space(4.0);
+        }
         // A mailbox of the organisation that the owner was given Full Access to (#70).
         // (Not for a personal Microsoft account, which has none.)
         if crate::shared_mailboxes::can_open_shared(a) {

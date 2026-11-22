@@ -100,6 +100,9 @@ mod dav_job;
 mod dav_job_tests;
 #[cfg(test)]
 mod dav_secrets_tests;
+mod dav_setup;
+#[cfg(test)]
+mod dav_setup_tests;
 #[cfg(test)]
 mod dialog_report_tests;
 #[cfg(test)]
@@ -328,6 +331,7 @@ use serde_json::{Value, json};
 pub use approval::{AdminConsentAnswer, AdminConsentRequest};
 pub use control::ControlRequest;
 pub use dav_job::{DavDone, DavJob};
+pub use dav_setup::{DavFindDone, DavFindJob, DavPlace};
 pub use files::FileDialogRequest;
 pub use idle_watch::IdleWatch;
 pub use scheduling::{FreeBusyRequest, FreeBusyResult};
@@ -566,6 +570,11 @@ pub struct Services {
     /// challenge, over TLS, to the pinned certificate when one is set. Absent in the browser and
     /// the tests.
     pub dav: Option<Box<dyn Fn(DavJob) -> Receiver<DavDone>>>,
+    /// Desktop: look for where an account's calendars are, for the Calendar Server form (#209,
+    /// `mailcraft_net::dav_find::find`), on a background thread. The job holds the password the
+    /// owner typed; the host sends it only where the search allows. Absent in the browser and the
+    /// tests.
+    pub dav_find: Option<Box<dyn Fn(DavFindJob) -> Receiver<DavFindDone>>>,
     /// Desktop: remove everything MailCraft keeps on this computer, in the folders the host
     /// itself works in ([`data_removal::DataWipe`], File › Info › Remove MailCraft's data from
     /// this computer, #177). Absent in the browser and the tests.
@@ -1657,6 +1666,10 @@ pub struct MailApp {
     /// an origin's when the server changes.
     /// (A write of one to the credential store asks [`MailApp::dav_forget_pending`] first.)
     pub(crate) dav_passwords: std::collections::HashMap<(Id, String), String>,
+    /// The Calendar Server form's search under way, with the password it signs in with
+    /// ([`dav_setup`]), and how the last one came out.
+    pub(crate) dav_finding: Option<dav_setup::Finding>,
+    pub(crate) dav_found: Option<Result<(), String>>,
     /// Threads removing calendar and contacts passwords from the credential store, each with what
     /// it confirmed gone ([`MailApp::poll_dav_forgetting`]).
     /// (With the names each was started for.)
@@ -2020,6 +2033,8 @@ impl MailApp {
             list_page_rows: 10,
             passwords: Default::default(),
             dav_passwords: Default::default(),
+            dav_finding: None,
+            dav_found: None,
             dav_forgetting: Vec::new(),
             dav_forget_queue: Vec::new(),
             ews_unreadable: Default::default(),
@@ -5202,6 +5217,8 @@ impl MailApp {
             self.subscribed_tick();
             // The calendars of a calendar server, when they are due ([`dav_job`]).
             self.dav_tick();
+            // The Calendar Server form's search, when it comes back ([`dav_setup`]).
+            self.dav_find_tick();
             // The tasks by themselves, after the calendar ([`task_sync`]).
             self.tasks_tick(ctx);
             // The rules on the servers by themselves, after the tasks ([`rule_sync`]).

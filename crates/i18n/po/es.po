@@ -621,6 +621,11 @@ msgid "A save of the mailbox is still running: try again in a moment"
 msgstr "Todavía se está guardando el buzón: vuelva a intentarlo en un momento"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "A search for a calendar server is already under way."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 #, fuzzy
 msgid "A secure connection to the server couldn't be set up. Type the server's address in Server settings."
@@ -1563,6 +1568,11 @@ msgstr "Animaciones"
 #, fuzzy
 msgid "Another mailbox was opened: the import stopped."
 msgstr "Se abrió otro buzón: la importación se detuvo."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Another server"
+msgstr ""
 
 #. interface, what a command says
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/meeting_dialogs.rs
@@ -2617,6 +2627,21 @@ msgstr "Comprobación de la conexión del calendario"
 msgid "Calendar Listed Twice"
 msgstr "Calendario listado dos veces"
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Calendar Server"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server (connected)…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server…"
+msgstr ""
+
 #. command label
 #: crates/engine/src/cmd/dav_sync.rs
 #, fuzzy
@@ -3570,7 +3595,7 @@ msgid "Confirm servers"
 msgstr "Confirmar servidores"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Connect"
 msgstr "Conectar"
@@ -8259,6 +8284,11 @@ msgid "Looking for your Exchange server…"
 msgstr "Buscando su servidor Exchange…"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Looking for your calendars…"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/check_names.rs
 #, fuzzy
 msgid "Looking the names up in the organisation's address list…"
@@ -11820,7 +11850,7 @@ msgid "Part of your mailbox is damaged"
 msgstr "Parte de su buzón está dañada"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Password"
 msgstr "Contraseña"
@@ -12418,6 +12448,11 @@ msgstr "Estado de lectura"
 #, fuzzy
 msgid "Read the Favorites from Outlook again now"
 msgstr "Volver a leer ahora los Favoritos de Outlook"
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Read this account's calendars from iCloud, Fastmail or another calendar server"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/dialogs.rs
@@ -17331,6 +17366,11 @@ msgstr "El propietario no ha permitido buscar actualizaciones."
 msgid "The page was closed, or five minutes went by before the sign-in was finished."
 msgstr "Se cerró la página, o pasaron cinco minutos antes de terminar el inicio de sesión."
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The password goes only to that server, over an encrypted connection. Your calendars are read only: changes are made on the server."
+msgstr ""
+
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/People.kt
 #, fuzzy
@@ -17455,6 +17495,11 @@ msgstr "La búsqueda de su servidor Exchange pide empezar de nuevo con una direc
 #, fuzzy
 msgid "The search for your Exchange server was sent on to {host}, which isn't in your address's own domain."
 msgstr "La búsqueda de su servidor Exchange se redirigió a {host}, que no está en el dominio de su dirección."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The search stopped before it found anything."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/backstage.rs
@@ -17623,6 +17668,11 @@ msgstr "El servidor rechazó el inicio de sesión de esta cuenta. Use Enviar y r
 #, fuzzy
 msgid "The server turned down the sign-in for {name}: sign in again"
 msgstr "El servidor rechazó el inicio de sesión de {name}: inicie sesión de nuevo"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The server's address"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
@@ -19006,6 +19056,11 @@ msgid "This task could not be read."
 msgstr "No se pudo leer esta tarea."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "This version can't look for calendar servers."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/address_book.rs
 #, fuzzy
 msgid "This version of MailCraft can't search an address list"
@@ -19782,7 +19837,7 @@ msgid "Use {address}"
 msgstr "Usar {address}"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "User name"
 msgstr "Nombre de usuario"
@@ -20123,6 +20178,11 @@ msgstr "Al cambiar:"
 #, fuzzy
 msgid "Where"
 msgstr "Dónde"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Where the calendars of {account} are"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/security.rs
@@ -20513,6 +20573,11 @@ msgstr "Ha aceptado provisionalmente esta reunión."
 #, fuzzy
 msgid "You're working offline. Turn off Work Offline (Send / Receive) to connect."
 msgstr "Está trabajando sin conexión. Desactive Trabajar sin conexión (Enviar y recibir) para conectarse."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. Your calendars are read only: changes are made in iCloud."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/auto_replies.rs
