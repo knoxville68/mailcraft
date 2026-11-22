@@ -947,7 +947,10 @@ impl Discovery {
         // The host the owner typed: they named it, so its Basic challenge is enough for the
         // password to go (a proxy that signs everybody in first answers every request with a
         // bare 401). What answers must then be a DAV multistatus, or it is no calendar server.
-        if ask.basic && self.typed_origins.contains(&ask.origin) {
+        // So is a numbered host of the known provider (iCloud's `p183-caldav.icloud.com`), which
+        // asks for the password the same bare way: the provider is the owner's choice.
+        let provider_shard = Origin::parse(&ask.origin).is_ok_and(|o| o.secure() && self.preset.is_some_and(|p| p.trusts(o.host())));
+        if ask.basic && (self.typed_origins.contains(&ask.origin) || provider_shard) {
             if !self.unproven.contains(&ask.origin) && self.unproven.len() < MAX_TRUSTED {
                 self.unproven.push(ask.origin.clone());
             }

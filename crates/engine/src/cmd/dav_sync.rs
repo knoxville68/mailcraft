@@ -38,9 +38,10 @@ use std::collections::{HashMap, HashSet};
 
 use mailcraft_model::dav_down::{MAX_ACCOUNT_RESOURCES, MAX_CHANGES, MAX_KNOWN, MAX_READ, MAX_RESOURCES};
 use mailcraft_model::remote::MAX_KEY;
+use mailcraft_model::remote::{EventChangeKind, MAX_EVENT_OPS};
 use mailcraft_model::{
-    Calendar, DavAsk, DavAskCollection, DavChange, DavCollectionState, DavDownload, DavKnown, DavListing, DavProblem, DavRead, DavReadState,
-    DavServer, Event, Id, Origin, Rights, origin_of,
+    Calendar, DavAsk, DavAskCollection, DavChange, DavCollectionState, DavCreate, DavCreated, DavDownload, DavKnown, DavListing, DavProblem, DavPut,
+    DavRead, DavReadState, DavServer, Event, Id, Origin, Rights, origin_of,
 };
 use serde_json::{Value, json};
 
@@ -103,6 +104,73 @@ fn available(s: &Session) -> Option<&'static str> {
         .or_else(|| if s.mailbox.accounts.iter().any(|a| a.dav.is_some()) { None } else { Some("no account has a calendar and contacts server") })
 }
 
+/// What the server made of the events made here that the request gave it (#209 D6). Taken in only
+/// for an event that still waits to be made there, into a resource inside its own calendar.
+/// Made (or there already from an earlier put whose answer was lost): it is the server's from now
+/// on, under the resource's address and ETag, and the read that follows brings its document; one
+/// the calendar has under that address already (a redo) goes. Refused: it is kept in a calendar
+/// on this computer, never lost. Not now: it waits for the next run. Whether anything changed.
+fn take_created(s: &mut Session, account: Id, created: &[DavCreated], took: &mut Took) -> bool {
+    let mut changed = false;
+    for answer in created.iter().take(MAX_EVENT_OPS) {
+        let waits = s.mailbox.event_changes.iter().any(|c| c.account == account && c.kind == EventChangeKind::Create && c.event == answer.event);
+        let Some(event) = s.mailbox.event(answer.event).filter(|e| waits && e.origin.account == account && e.origin.id.is_empty()) else {
+            continue;
+        };
+        let (id, calendar, title) = (event.id, event.calendar, event.title.clone());
+        let Some(home) = s.mailbox.calendar(calendar).map(|c| c.origin.id.clone()) else { continue };
+        let drop_change = |s: &mut Session| s.mailbox.event_changes.retain(|c| !(c.kind == EventChangeKind::Create && c.event == id));
+        match answer.outcome {
+            DavPut::Created | DavPut::Exists => {
+                if !within(&home, &answer.href) {
+                    continue;
+                }
+                let twin = s.mailbox.events.values().any(|e| e.id != id && e.calendar == calendar && e.origin.id == answer.href);
+                drop_change(s);
+                if twin {
+                    let _ = s.mailbox.remove_event(id);
+                } else if let Ok(e) = s.mailbox.event_mut(id) {
+                    let etag = if answer.outcome == DavPut::Created && answer.etag.len() <= MAX_KEY { answer.etag.clone() } else { String::new() };
+                    e.origin = Origin { account, id: answer.href.clone(), change_key: etag, ..Default::default() };
+                }
+                took.sent += 1;
+                changed = true;
+            }
+            DavPut::Refused => {
+                drop_change(s);
+                super::remote::keep_on_this_computer(&mut s.mailbox, id);
+                took.refused.push(title);
+                changed = true;
+            }
+            DavPut::NotNow => {}
+        }
+    }
+    changed
+}
+
+/// The events made here in the account's CalDAV calendars that are due to go to its server (#209
+/// D6), each as the document to put: [`MAX_EVENT_OPS`] at most, oldest first. Only into a
+/// collection the request names and new events may go into ([`super::remote::dav_addable`]).
+fn creates(s: &Session, account: Id, collections: &[DavAskCollection]) -> Vec<DavCreate> {
+    let now = s.now();
+    let mb = &s.mailbox;
+    let mut out = Vec::new();
+    for change in mb.event_changes.iter().filter(|c| c.account == account && c.kind == EventChangeKind::Create && c.retry_at <= now) {
+        if out.len() >= MAX_EVENT_OPS {
+            break;
+        }
+        let Some(event) = mb.event(change.event).filter(|e| e.origin.id.is_empty()) else { continue };
+        let Some(calendar) = mb.calendar(event.calendar) else { continue };
+        if !collections.iter().any(|c| c.href == calendar.origin.id) || !super::remote::dav_addable(mb, calendar.id) {
+            continue;
+        }
+        let opts = mailcraft_ical::WriteOptions { method: String::new(), now };
+        let body = mailcraft_ical::write_in(&[event], &[], &opts, Some(s.zone()));
+        out.push(DavCreate { event: event.id, collection: calendar.origin.id.clone(), name: change.token.clone(), body });
+    }
+    out
+}
+
 fn changes(_: &mut Session, _: &Value) -> CmdResult {
     Err(fail(NOT_YET))
 }
@@ -132,6 +200,20 @@ pub(super) fn forget_account(s: &mut Session, account: Id, collections: &[String
         let _ = s.mailbox.remove_event(*id);
     }
     s.mailbox.event_changes.retain(|c| !(c.account == account && events.contains(&c.event)));
+    // Made here and not sent yet (D6): they stay, as the owner's own, and wait for no server.
+    let unsent: Vec<Id> = s
+        .mailbox
+        .events
+        .values()
+        .filter(|e| followed_set.contains(&e.calendar) && e.origin.account == account && e.origin.id.is_empty())
+        .map(|e| e.id)
+        .collect();
+    for id in &unsent {
+        if let Ok(e) = s.mailbox.event_mut(*id) {
+            e.origin = Origin::default();
+        }
+    }
+    s.mailbox.event_changes.retain(|c| !(c.account == account && unsent.contains(&c.event)));
     // A calendar with something of the owner's left in it becomes the mailbox's own. And one
     // calendar of the mailbox's own always stays, for new events to go in (as `calendar.remove`
     // keeps one): a subscribed copy of a calendar on the web is not one.
@@ -232,6 +314,7 @@ fn request(s: &mut Session, v: &Value) -> CmdResult {
             ask.known.push(DavKnown { href: href.clone(), etag: r.etag.clone() });
         }
     }
+    let creates = creates(s, account.id, &collections);
     let ask = DavAsk {
         account: account.id,
         email: account.email.trim().to_string(),
@@ -241,6 +324,7 @@ fn request(s: &mut Session, v: &Value) -> CmdResult {
         list_homes,
         server: server.identity(&account.email),
         collections,
+        creates,
     };
     // (After every other, even within one second.)
     let turn = now.max(s.dav_asked.values().copied().max().map_or(i64::MIN, |last| last.saturating_add(1)));
@@ -258,6 +342,10 @@ struct Took {
     removed: usize,
     calendars: usize,
     skipped: usize,
+    /// Events made here that the server took ([`DavDownload::created`]).
+    sent: usize,
+    /// The titles of those it wouldn't take, kept on this computer instead.
+    refused: Vec<String>,
 }
 
 /// Whether `href` is a resource inside `collection` on the same origin: the collection's address
@@ -295,6 +383,7 @@ fn apply(s: &mut Session, v: &Value) -> CmdResult {
     let took = take_in(s, &download)?;
     Ok(json!({
         "added": took.added, "updated": took.updated, "removed": took.removed, "calendars": took.calendars,
+        "sent": took.sent, "refused": took.refused,
         "skipped": took.skipped.saturating_add(download.skipped as usize),
         "problem": serde_json::to_value(download.problem).unwrap_or(Value::Null),
         "wait": download.wait.min(600),
@@ -340,6 +429,7 @@ fn take_in(s: &mut Session, download: &DavDownload) -> Result<Took, CmdError> {
             s.dav_listed.insert(account, now);
         }
     }
+    changed |= take_created(s, account, &download.created, &mut took);
     // (Counted once: each read adds to it. What waits to be sent is looked at once, too.)
     let mut total = s.mailbox.events.values().filter(|e| e.origin.account == account && !e.origin.id.is_empty()).count();
     let pending: HashSet<Id> = s.mailbox.event_changes.iter().map(|c| c.event).collect();

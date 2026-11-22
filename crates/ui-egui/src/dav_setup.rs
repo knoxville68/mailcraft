@@ -204,10 +204,12 @@ pub(crate) fn form(app: &mut MailApp, ctx: &egui::Context, enter: bool, f: &mut 
         });
         let note = if f.place == DavPlace::ICloud {
             tl!(
-                "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. Your calendars are read only: changes are made in iCloud."
+                "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
             )
         } else {
-            tl!("The password goes only to that server, over an encrypted connection. Your calendars are read only: changes are made on the server.")
+            tl!(
+                "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+            )
         };
         ui.label(egui::RichText::new(note).color(t.text_dim).size(11.0));
         if f.busy {

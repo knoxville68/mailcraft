@@ -340,6 +340,12 @@ msgid "A calendar change couldn't be sent yet and will be tried again: {error}"
 msgstr "Eine Kalenderänderung konnte noch nicht gesendet werden und wird erneut versucht: {error}"
 
 #. what a command says
+#: crates/engine/src/cmd/calendar.rs
+#, fuzzy
+msgid "A calendar server's calendar takes appointments from here, not meetings yet: the server could send invitations by itself. Keep the meeting in a calendar on this computer."
+msgstr "Ein Kalender auf einem Kalender-Server nimmt von hier aus Termine an, aber noch keine Besprechungen: Der Server könnte selbst Einladungen verschicken. Legen Sie die Besprechung in einem Kalender auf diesem Computer an."
+
+#. what a command says
 #: crates/engine/src/sync_driver/calendar_plan.rs
 msgid "A change to a shared mailbox's calendar was refused: this account may not edit it. It is tried once more, and then put back."
 msgstr "Eine Änderung am Kalender eines freigegebenen Postfachs wurde abgelehnt: Dieses Konto darf ihn möglicherweise nicht bearbeiten. Der Vorgang wird einmal wiederholt und der Kalender anschließend zurückgesetzt."
@@ -11651,12 +11657,6 @@ msgid "Read the Favorites from Outlook again now"
 msgstr "Favoriten jetzt erneut aus Outlook lesen"
 
 #. interface
-#: crates/ui-egui/src/backstage.rs
-#, fuzzy
-msgid "Read this account's calendars from iCloud, Fastmail or another calendar server"
-msgstr "Die Kalender dieses Kontos aus iCloud, Fastmail oder von einem anderen Kalender-Server lesen"
-
-#. interface
 #: crates/ui-egui/src/dialogs.rs
 msgid "Read with {owner}'s sign-in, for as long as you keep it: the person has to have shared their calendar with you. It is kept on this computer only: it won't appear in Outlook or on your other devices. Microsoft asks you once to let MailCraft read other people's calendars."
 msgstr "Mit der Anmeldung von {owner} lesen, solange Sie den Kalender geöffnet lassen: Die betreffende Person muss ihren Kalender für Sie freigegeben haben. Der Kalender wird nur auf diesem Computer gespeichert und erscheint weder in Outlook noch auf Ihren anderen Geräten. Microsoft fragt Sie einmalig, ob MailCraft Kalender anderer Personen lesen darf."
@@ -14099,6 +14099,12 @@ msgid "Show the whole original"
 msgstr "Ganzes Original anzeigen"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+#, fuzzy
+msgid "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+msgstr "Die Kalender dieses Kontos aus iCloud, Fastmail oder von einem anderen Kalender-Server anzeigen und neue Termine darin anlegen"
+
+#. interface
 #: crates/ui-egui/src/reading/remote.rs
 #, fuzzy
 msgid "Show this message's pictures, this once. Whoever sent it can then tell that you opened it."
@@ -15685,6 +15691,14 @@ msgstr ""
 #. interface
 #: crates/ui-egui/src/dav_job.rs
 #, fuzzy
+msgid "The calendar server didn't take \"{title}\": it is kept in a calendar on this computer."
+msgid_plural "The calendar server didn't take {n} new events: they are kept in a calendar on this computer."
+msgstr[0] "Der Kalender-Server hat \"{title}\" nicht angenommen: Der Termin bleibt in einem Kalender auf diesem Computer."
+msgstr[1] "Der Kalender-Server hat {n} neue Termine nicht angenommen: Sie bleiben in einem Kalender auf diesem Computer."
+
+#. interface
+#: crates/ui-egui/src/dav_job.rs
+#, fuzzy
 msgid "The calendar server of {account} has a certificate that isn't trusted, so nothing was sent to it."
 msgstr "Der Kalenderserver von {account} hat ein Zertifikat, das nicht vertrauenswürdig ist, daher wurde nichts an ihn gesendet."
 
@@ -16313,8 +16327,8 @@ msgstr "Die Seite wurde geschlossen, oder es vergingen fünf Minuten, bevor die 
 #. interface
 #: crates/ui-egui/src/dav_setup.rs
 #, fuzzy
-msgid "The password goes only to that server, over an encrypted connection. Your calendars are read only: changes are made on the server."
-msgstr "Das Passwort geht nur an diesen Server, über eine verschlüsselte Verbindung. Ihre Kalender werden nur gelesen: Änderungen nehmen Sie auf dem Server vor."
+msgid "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+msgstr "Das Passwort geht nur an diesen Server, über eine verschlüsselte Verbindung. Neue Termine können Sie hier anlegen, andere Änderungen nehmen Sie auf dem Server vor."
 
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/People.kt
@@ -19342,8 +19356,8 @@ msgstr "Sie arbeiten offline. Deaktivieren Sie „Offline arbeiten“ (Senden/Em
 #. interface
 #: crates/ui-egui/src/dav_setup.rs
 #, fuzzy
-msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. Your calendars are read only: changes are made in iCloud."
-msgstr "Ihre Apple-ID und ein app-spezifisches Passwort, das Sie auf account.apple.com unter „Anmeldung und Sicherheit“ erstellen. Ihre Kalender werden nur gelesen: Änderungen nehmen Sie in iCloud vor."
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
+msgstr "Ihre Apple-ID und ein app-spezifisches Passwort, das Sie auf account.apple.com unter „Anmeldung und Sicherheit“ erstellen. Neue Termine können Sie hier anlegen, andere Änderungen nehmen Sie in iCloud vor."
 
 #. interface
 #: crates/ui-egui/src/auto_replies.rs
@@ -24275,6 +24289,18 @@ msgstr "−Bin"
 #, fuzzy
 msgid "−Lines"
 msgstr "−Zeilen"
+
+#, fuzzy
+#~ msgid "Read this account's calendars from iCloud, Fastmail or another calendar server"
+#~ msgstr "Die Kalender dieses Kontos aus iCloud, Fastmail oder von einem anderen Kalender-Server lesen"
+
+#, fuzzy
+#~ msgid "The password goes only to that server, over an encrypted connection. Your calendars are read only: changes are made on the server."
+#~ msgstr "Das Passwort geht nur an diesen Server, über eine verschlüsselte Verbindung. Ihre Kalender werden nur gelesen: Änderungen nehmen Sie auf dem Server vor."
+
+#, fuzzy
+#~ msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. Your calendars are read only: changes are made in iCloud."
+#~ msgstr "Ihre Apple-ID und ein app-spezifisches Passwort, das Sie auf account.apple.com unter „Anmeldung und Sicherheit“ erstellen. Ihre Kalender werden nur gelesen: Änderungen nehmen Sie in iCloud vor."
 
 #, fuzzy
 #~ msgid "Capitalize the first word of sentences"

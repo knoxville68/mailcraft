@@ -15,6 +15,9 @@ const PASSWORD: &str = "test-only-not-a-secret";
 struct World {
     servers: Vec<StandIn>,
     log: Mutex<Vec<(String, bool)>>,
+    /// Answer every request without a credential with a bare `401 Basic` and no `DAV` header,
+    /// as iCloud's server does.
+    bare: bool,
 }
 
 impl World {
@@ -27,7 +30,7 @@ impl World {
                 s
             })
             .collect();
-        World { servers, log: Mutex::new(Vec::new()) }
+        World { servers, log: Mutex::new(Vec::new()), bare: false }
     }
 
     fn origins(&self) -> Vec<String> {
@@ -39,6 +42,16 @@ impl HttpExchange for World {
     fn exchange(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         let origin = Origin::parse(request.url()).unwrap();
         self.log.lock().unwrap().push((origin.base(), request.field("authorization").is_some()));
+        if self.bare && request.field("authorization").is_none() {
+            return Ok(HttpResponse::new(401, Vec::new()).with_field("WWW-Authenticate", "Basic realm=\"test\""));
+        }
+        // Signed in, it answers at its root itself with where the owner's principal is.
+        if self.bare && request.url().ends_with(".com/") {
+            let body = "<?xml version=\"1.0\"?><d:multistatus xmlns:d=\"DAV:\"><d:response><d:href>/</d:href><d:propstat><d:prop>\
+                <d:current-user-principal><d:href>/dav/principals/owner/</d:href></d:current-user-principal>\
+                <d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>";
+            return Ok(HttpResponse::new(207, body.as_bytes().to_vec()).with_field("Content-Type", "application/xml; charset=utf-8"));
+        }
         // A server whose tree starts below its root sends the root there, as iCloud's does.
         if request.url().ends_with(".com/") || request.url().ends_with(".net/") {
             return Ok(HttpResponse::new(301, Vec::new()).with_field("Location", "/dav/"));
@@ -88,4 +101,19 @@ fn nothing_is_sent_for_an_unknown_provider_a_bad_address_or_a_colon_in_the_name(
     assert!(world.origins().is_empty());
     // And the Debug of what was found shows no address.
     assert_eq!(format!("{:?}", Found::Homes(vec!["https://dav.example.net/secret/".into()])), "Homes(1)");
+}
+
+#[test]
+fn icloud_asking_for_the_password_without_saying_it_keeps_calendars_still_gets_it() {
+    let mut world = World::new(&["https://caldav.icloud.com"]);
+    world.bare = true;
+    let found = find_with(&world, "someone@gmail.example", USER, PASSWORD, Place::Provider("icloud"));
+    assert!(matches!(found, Found::Homes(ref homes) if !homes.is_empty()), "{found:?}");
+    assert!(world.origins().iter().all(|o| o == "https://caldav.icloud.com"));
+    // A server found by the address alone that does the same is not given the password.
+    let mut other = World::new(&["https://example.org"]);
+    other.bare = true;
+    let found = find_with(&other, USER, USER, PASSWORD, Place::Address);
+    assert!(matches!(found, Found::Failed(_)), "{found:?}");
+    assert!(other.log.lock().unwrap().iter().all(|(_, signed)| !signed), "no password went there");
 }
