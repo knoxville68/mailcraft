@@ -1584,6 +1584,36 @@ mod two_way {
         );
     }
 
+    /// Deleted for good while the run moved it into Deleted Items: the run's answer turns the
+    /// deletion into one from where the server has it now, and the history ends, as for any
+    /// deletion for good, so that no undo brings the message back with that deletion still waiting.
+    #[test]
+    fn a_deletion_for_good_made_while_the_run_moved_it_ends_the_history() {
+        let (mut s, a, _, _) = synced();
+        let deleted = folder(&s, a, FolderKind::Deleted);
+        let one = titled(&s, a, "One");
+        run(&mut s, "mail.delete", json!({"id": one}));
+        run(&mut s, "mail.deletePermanently", json!({"id": one}));
+        apply(&mut s, SyncResult { account: a, moved: vec![moved(one, "INBOX", 1, deleted, 5, 10)], ..Default::default() });
+        assert!(!s.can_undo(), "the message can't come back with its deletion still waiting");
+        assert_eq!(request(&s, a).ops, [RemoteOp::Delete { from: "Trash".into(), uid: 5 }], "deleted where the server has it now");
+    }
+
+    /// Undo of a read mark leaves where the message is alone: moved since (from another device,
+    /// say), it isn't moved back.
+    #[test]
+    fn undo_of_a_read_mark_doesnt_move_a_message_moved_since() {
+        let (mut s, a, _, archive) = synced();
+        let one = titled(&s, a, "Two");
+        run(&mut s, "mail.markRead", json!({"id": one}));
+        // Since then the server moved it into Archive, as a run found it.
+        let m = s.mailbox.message_mut(one).unwrap();
+        (m.folder, m.uid) = (archive, 12);
+        run(&mut s, "edit.undo", json!({}));
+        let ops = request(&s, a).ops;
+        assert!(!ops.iter().any(|op| matches!(op, RemoteOp::Move { .. })), "not moved back: {ops:?}");
+    }
+
     /// Undone before the server heard of it, a deletion is simply called off.
     #[test]
     fn a_deletion_undone_before_the_run_sends_nothing() {
