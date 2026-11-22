@@ -521,6 +521,11 @@ msgstr "Egy találkozót nem lehet más postafiók naptárába átvinni: ez mind
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "A {n}-embereknek legfeljebb azonnal küldünk egy találkozót."
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A meeting on a calendar server can't be deleted from here yet: the server could send cancellations by itself."
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/reading/invitation.rs
 #, fuzzy
@@ -11093,6 +11098,11 @@ msgid "Once it has worked, your system's credential store keeps it for next time
 msgstr "Ha már működött, a rendszer hiteles boltja legközelebb megtartja."
 
 #. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
+#. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 #, fuzzy
 msgid "One occurrence of a series can't be in another calendar than the rest of the series."
@@ -16696,6 +16706,13 @@ msgstr ""
 #: crates/ui-egui/src/dav_job.rs
 msgid "The calendar server didn't take \"{title}\": it is kept in a calendar on this computer."
 msgid_plural "The calendar server didn't take {n} new events: they are kept in a calendar on this computer."
+msgstr[0] ""
+msgstr[1] ""
+
+#. interface
+#: crates/ui-egui/src/dav_job.rs
+msgid "The calendar server kept \"{title}\": it was changed there, or can't be deleted from here. It is shown again."
+msgid_plural "The calendar server kept {n} events: they were changed there, or can't be deleted from here. They are shown again."
 msgstr[0] ""
 msgstr[1] ""
 

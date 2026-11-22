@@ -340,3 +340,23 @@ fn r_a_job_whose_thread_died_is_trouble_and_waits_its_back_off() {
     a.dav_tick();
     assert!(a.dav.trouble.contains_key(&id), "not tried again every minute");
 }
+
+/// No job starts while the credential store is still being read at the start: the first one would
+/// have no password and be held up for a while.
+#[test]
+fn no_job_starts_while_the_credential_store_is_still_read() {
+    let (mut a, _) = app(false);
+    let started = Arc::new(Mutex::new(0usize));
+    let count = started.clone();
+    a.services.dav = Some(Box::new(move |_| {
+        *count.lock().unwrap() += 1;
+        std::sync::mpsc::channel().1
+    }));
+    let (_send, receive) = std::sync::mpsc::channel();
+    a.secret_read = Some((a.session.openings(), receive));
+    a.dav_tick();
+    assert_eq!(*started.lock().unwrap(), 0);
+    a.secret_read = None;
+    a.dav_tick();
+    assert_eq!(*started.lock().unwrap(), 1);
+}

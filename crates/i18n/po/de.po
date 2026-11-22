@@ -473,6 +473,12 @@ msgstr "Eine Besprechung kann nicht in den Kalender eines anderen Postfachs vers
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "Eine Besprechung wird an höchstens {n} Personen gleichzeitig weitergeleitet."
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+#, fuzzy
+msgid "A meeting on a calendar server can't be deleted from here yet: the server could send cancellations by itself."
+msgstr "Eine Besprechung auf einem Kalender-Server lässt sich von hier aus noch nicht löschen: Der Server könnte selbst Absagen verschicken."
+
 #. interface
 #: crates/ui-egui/src/reading/invitation.rs
 msgid "A meeting on your calendar has this ID but another organizer, so this invitation can't change it."
@@ -10411,6 +10417,12 @@ msgid "Once it has worked, your system's credential store keeps it for next time
 msgstr "Sobald es funktioniert hat, bewahrt der Anmeldeinformationsspeicher Ihres Systems es für das nächste Mal auf. Es wird nie in das Postfach geschrieben."
 
 #. what a command says
+#: crates/engine/src/cmd/calendar.rs
+#, fuzzy
+msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr "Ein einzelner Tag einer Serie auf einem Kalender-Server lässt sich von hier aus noch nicht löschen: Löschen Sie die ganze Serie oder diesen Tag auf dem Server."
+
+#. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 #, fuzzy
 msgid "One occurrence of a series can't be in another calendar than the rest of the series."
@@ -15695,6 +15707,14 @@ msgid "The calendar server didn't take \"{title}\": it is kept in a calendar on 
 msgid_plural "The calendar server didn't take {n} new events: they are kept in a calendar on this computer."
 msgstr[0] "Der Kalender-Server hat \"{title}\" nicht angenommen: Der Termin bleibt in einem Kalender auf diesem Computer."
 msgstr[1] "Der Kalender-Server hat {n} neue Termine nicht angenommen: Sie bleiben in einem Kalender auf diesem Computer."
+
+#. interface
+#: crates/ui-egui/src/dav_job.rs
+#, fuzzy
+msgid "The calendar server kept \"{title}\": it was changed there, or can't be deleted from here. It is shown again."
+msgid_plural "The calendar server kept {n} events: they were changed there, or can't be deleted from here. They are shown again."
+msgstr[0] "Der Kalender-Server hat \"{title}\" behalten: Der Termin wurde dort geändert oder lässt sich von hier aus nicht löschen. Er wird wieder angezeigt."
+msgstr[1] "Der Kalender-Server hat {n} Termine behalten: Sie wurden dort geändert oder lassen sich von hier aus nicht löschen. Sie werden wieder angezeigt."
 
 #. interface
 #: crates/ui-egui/src/dav_job.rs

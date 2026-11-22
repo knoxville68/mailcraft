@@ -144,7 +144,9 @@ impl MailApp {
 
     /// Once a frame: take in a job that came back, and start the next when it is due.
     pub(crate) fn dav_tick(&mut self) {
-        if !self.session.dav_enabled {
+        // (Nor while the credential store is still being read at the start: its passwords are
+        // what the first job needs.)
+        if !self.session.dav_enabled || self.secret_read.is_some() {
             return;
         }
         let opening = self.session.openings();
@@ -258,6 +260,17 @@ impl MailApp {
                 refused.len(),
                 "The calendar server didn't take \"{title}\": it is kept in a calendar on this computer.",
                 "The calendar server didn't take {n} new events: they are kept in a calendar on this computer."
+            );
+            self.status(crate::i18n::fmt(&text, &[("title", first)]));
+        }
+        // Events deleted here that the server kept (changed there since, or refused): they come
+        // back with the next read, and the owner is told why.
+        let kept: Vec<&str> = applied.get("kept").and_then(Value::as_array).map(|r| r.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
+        if let Some(first) = kept.first() {
+            let text = tln!(
+                kept.len(),
+                "The calendar server kept \"{title}\": it was changed there, or can't be deleted from here. It is shown again.",
+                "The calendar server kept {n} events: they were changed there, or can't be deleted from here. They are shown again."
             );
             self.status(crate::i18n::fmt(&text, &[("title", first)]));
         }
