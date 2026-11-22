@@ -640,6 +640,11 @@ msgid "A secure connection to the server couldn't be set up. Type the server's a
 msgstr "Er kon geen beveiligde verbinding met de server worden gemaakt. Typ het adres van de server bij Serverinstellingen."
 
 #. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
+
+#. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 #, fuzzy
 msgid "A series that the account's server keeps can't be moved to another calendar from here: the server has no way of moving one, and days of it that were changed on their own could be lost in making it again."
@@ -1482,6 +1487,11 @@ msgstr "Een toepassings-id bestaat uit letters, cijfers, punten en streepjes"
 #, fuzzy
 msgid "An appointment marked private shows only that you are busy. Nobody invited to anything is named."
 msgstr "Een afspraak die als persoonlijk is gemarkeerd, toont alleen dat u bezet bent. Niemand die ergens voor is uitgenodigd, wordt genoemd."
+
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "An appointment on a calendar server can't be moved to another calendar from here yet."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/reading/signature.rs
@@ -10616,6 +10626,11 @@ msgstr "Op"
 #: crates/ui-egui/src/backstage.rs
 msgid "On Wayland, restart MailCraft after enabling this option. A reachable X11/XWayland server and a system tray are required."
 msgstr "Op Wayland moet u MailCraft opnieuw starten na het inschakelen van deze optie. Een bereikbare X11- of XWayland-server en een systeemvak zijn nodig."
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs

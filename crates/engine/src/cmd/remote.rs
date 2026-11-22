@@ -902,6 +902,27 @@ pub(crate) fn dav_addable(mailbox: &Mailbox, calendar: Id) -> bool {
         })
 }
 
+/// Whether a calendar server's event may become `after` from here (#209 D6): only its title,
+/// time, place and description, written into the document the server sent, which keeps
+/// everything else as it was; not a series, nor a meeting (the server could send updates by
+/// itself), nor a move to another calendar.
+pub(crate) fn dav_changeable(before: &Event, after: &Event) -> Result<(), CmdError> {
+    if before.recurrence.is_some() || !before.origin.series.is_empty() || !before.attendees.is_empty() || before.origin.guest {
+        return Err(fail("A series or a meeting on a calendar server can't be changed from here yet: change it on the server."));
+    }
+    let mut same = after.clone();
+    (same.title, same.location, same.description) = (before.title.clone(), before.location.clone(), before.description.clone());
+    (same.start, same.end, same.all_day) = (before.start, before.end, before.all_day);
+    (same.start_zone, same.end_zone) = (before.start_zone.clone(), before.end_zone.clone());
+    (same.start_repeated, same.end_repeated) = (before.start_repeated, before.end_repeated);
+    if same != *before {
+        return Err(fail(
+            "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server.",
+        ));
+    }
+    Ok(())
+}
+
 /// [`writable`] for an event about to be made in `calendar`: also a CalDAV calendar new events
 /// may go into ([`dav_addable`]).
 pub(crate) fn writable_for_new(mailbox: &Mailbox, calendar: Id) -> Result<(), CmdError> {
@@ -941,6 +962,9 @@ pub(crate) fn note_changed(mailbox: &mut Mailbox, before: &Event, offset_at: &dy
     // One the server doesn't have yet is sent as it is when it goes.
     if now.origin.id.is_empty() {
         return Ok(());
+    }
+    if dav_addable(mailbox, before.calendar) {
+        dav_changeable(before, &now)?;
     }
     let waiting = |change: &EventChange| change.kind == EventChangeKind::Update && change.account == account && change.remote == now.origin.id;
     match mailbox.event_changes.iter().position(waiting) {

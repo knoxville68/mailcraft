@@ -643,6 +643,11 @@ msgid "A secure connection to the server couldn't be set up. Type the server's a
 msgstr "无法建立与服务器的安全连接。在服务器设置中键入服务器的地址。"
 
 #. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
+
+#. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 #, fuzzy
 msgid "A series that the account's server keeps can't be moved to another calendar from here: the server has no way of moving one, and days of it that were changed on their own could be lost in making it again."
@@ -1521,6 +1526,11 @@ msgstr "应用程序 ID 只能包含字母、数字、点和连字符"
 #, fuzzy
 msgid "An appointment marked private shows only that you are busy. Nobody invited to anything is named."
 msgstr "标记为私人的约会只显示您正忙，不会显示受邀者的姓名。"
+
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "An appointment on a calendar server can't be moved to another calendar from here yet."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/reading/signature.rs
@@ -10999,6 +11009,11 @@ msgstr "开"
 #, fuzzy
 msgid "On Wayland, restart MailCraft after enabling this option. A reachable X11/XWayland server and a system tray are required."
 msgstr "在 Wayland 上，启用此选项后请重启 MailCraft。需要可用的 X11/XWayland 服务器和系统托盘。"
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs

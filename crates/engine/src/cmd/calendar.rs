@@ -103,7 +103,11 @@ fn changing(s: &Session, v: &Value) -> Result<Event, CmdError> {
     let e = s.mailbox.event(id).cloned().ok_or_else(|| fail("the event is gone"))?;
     // (A copy of a calendar on the web is read here, as one the account may only read is.)
     if kept_by(s, &e).is_some() || s.mailbox.calendar(e.calendar).is_some_and(|c| c.is_subscribed()) {
-        writable(s, e.calendar)?;
+        // (A calendar server's event is checked for what may change when it is noted.)
+        remote::writable_for_new(&s.mailbox, e.calendar)?;
+        if remote::dav_addable(&s.mailbox, e.calendar) && !e.origin.id.is_empty() {
+            remote::dav_changeable(&e, &e)?;
+        }
     }
     Ok(e)
 }
@@ -515,7 +519,8 @@ fn new_meeting(s: &mut Session, v: &Value) -> CmdResult {
 /// Whether the owner said yes to that mail.
 fn may_change(s: &Session, v: &Value, before: &Event, e: &Event) -> Result<bool, CmdError> {
     let Some(who) = kept_by(s, before) else { return Ok(false) };
-    writable(s, before.calendar)?;
+    // (What a calendar server's event may change is checked when the change is noted.)
+    remote::writable_for_new(&s.mailbox, before.calendar)?;
     let fields = remote::changed_fields(before, e, &remote::offset_of(s));
     if before.origin.guest {
         let why = if fields.attendees.is_some() {
@@ -737,6 +742,9 @@ fn edit(s: &mut Session, v: &Value) -> CmdResult {
     }
     let kept = kept_by(s, &before);
     let moved = e.calendar != before.calendar;
+    if moved && remote::dav_addable(&s.mailbox, before.calendar) && !before.origin.id.is_empty() {
+        return Err(fail("An appointment on a calendar server can't be moved to another calendar from here yet."));
+    }
     let mut send = false;
     meeting::online_fits(s, &e, Some(&before))?;
     if let Some(who) = &kept {

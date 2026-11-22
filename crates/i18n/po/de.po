@@ -595,6 +595,12 @@ msgid "A secure connection to the server couldn't be set up. Type the server's a
 msgstr "Es konnte keine sichere Verbindung zum Server hergestellt werden. Geben Sie die Serveradresse in den Servereinstellungen ein."
 
 #. what a command says
+#: crates/engine/src/cmd/remote.rs
+#, fuzzy
+msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr "Eine Serie oder Besprechung auf einem Kalender-Server lässt sich von hier aus noch nicht ändern: Ändern Sie sie auf dem Server."
+
+#. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 #, fuzzy
 msgid "A series that the account's server keeps can't be moved to another calendar from here: the server has no way of moving one, and days of it that were changed on their own could be lost in making it again."
@@ -1449,6 +1455,12 @@ msgstr "Eine Anwendungs-ID besteht aus Buchstaben, Ziffern, Punkten und Bindestr
 #: crates/ui-egui/src/meeting_dialogs/share.rs
 msgid "An appointment marked private shows only that you are busy. Nobody invited to anything is named."
 msgstr "Bei einem als privat gekennzeichneten Termin wird nur angezeigt, dass Sie beschäftigt sind. Es werden keine eingeladenen Personen namentlich genannt."
+
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+#, fuzzy
+msgid "An appointment on a calendar server can't be moved to another calendar from here yet."
+msgstr "Ein Termin auf einem Kalender-Server lässt sich von hier aus noch nicht in einen anderen Kalender verschieben."
 
 #. interface
 #: crates/ui-egui/src/reading/signature.rs
@@ -10325,6 +10337,12 @@ msgstr "Am"
 #: crates/ui-egui/src/backstage.rs
 msgid "On Wayland, restart MailCraft after enabling this option. A reachable X11/XWayland server and a system tray are required."
 msgstr "Starten Sie MailCraft unter Wayland nach dem Aktivieren dieser Option neu. Ein erreichbarer X11-/XWayland-Server und ein Infobereich sind erforderlich."
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+#, fuzzy
+msgid "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server."
+msgstr "Auf einem Kalender-Server lassen sich von hier aus bisher nur Titel, Zeit, Ort und Beschreibung eines Termins ändern: Ändern Sie den Rest auf dem Server."
 
 #. interface
 #: crates/ui-egui/src/forms.rs
