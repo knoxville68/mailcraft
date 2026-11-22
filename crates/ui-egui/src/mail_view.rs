@@ -776,16 +776,26 @@ fn size_label(s: &mailcraft_engine::Session, m: &Message) -> Option<String> {
 /// one folder (its subfolders, its mailbox or every mailbox), as Outlook's rows do (#195, #493);
 /// in one folder the owner knows which it is.
 fn shows_folder(s: &mailcraft_engine::Session) -> bool {
-    s.view.scope != mailcraft_engine::Scope::Folder && !mailcraft_model::search::Query::parse(&s.view.search).is_empty()
+    s.combined().is_some() || s.view.scope != mailcraft_engine::Scope::Folder && !mailcraft_model::search::Query::parse(&s.view.search).is_empty()
+}
+
+/// What a row says of where its message is: in All Inboxes and the like every row is in a folder
+/// of the same kind, so only whose account it is tells them apart; elsewhere the folder.
+fn row_folder_label(s: &mailcraft_engine::Session, f: &mailcraft_model::Folder) -> String {
+    match (s.combined(), s.mailbox.account(f.account)) {
+        (Some(_), Some(a)) => crate::nav::account_label(a),
+        _ => crate::nav::result_folder_label(&s.mailbox, f),
+    }
 }
 
 /// Whether the list may hold mail of more than one account: a search of every mailbox, with more
 /// than one account to search. Its rows then wear their accounts' colours (#893); elsewhere the
 /// owner knows whose mail it is, and the rows stay as they were.
 fn mixes_accounts(s: &mailcraft_engine::Session) -> bool {
-    s.view.scope == mailcraft_engine::Scope::Everywhere
-        && s.mailbox.accounts.len() > 1
-        && !mailcraft_model::search::Query::parse(&s.view.search).is_empty()
+    (s.combined().is_some() && s.mailbox.accounts.len() > 1)
+        || s.view.scope == mailcraft_engine::Scope::Everywhere
+            && s.mailbox.accounts.len() > 1
+            && !mailcraft_model::search::Query::parse(&s.view.search).is_empty()
 }
 
 /// The colour of the stripe on `m`'s row (#893): its account's, in a list of more than one
@@ -1207,7 +1217,7 @@ fn message_row_content(app: &mut MailApp, ui: &mut Ui, row: &Row, rect: Rect, dr
     }
     // (And under an open conversation, a message of another folder: a reply in Sent Items, #503.)
     if let Some(folder) = shown_folder {
-        let label = crate::nav::result_folder_label(&app.session.mailbox, folder);
+        let label = row_folder_label(&app.session, folder);
         let end = sx;
         sx = paint_result_folder(p, pos2(end, tail_y), &label, &t) - 6.0;
         app.hit.add("messageFolder", row.id, Rect::from_min_max(pos2(sx + 6.0, tail_y - 7.0), pos2(end, tail_y + 7.0)));

@@ -89,3 +89,20 @@ fn one_account_never_mixes() {
     s.run("view.clearSearch", &json!({})).unwrap();
     assert!(!mixes_accounts(&s));
 }
+
+#[test]
+fn rows_in_all_inboxes_name_their_account_not_the_folder() {
+    let (mut harness, first, second, moved) = window();
+    let label = |h: &Window, id: Id| {
+        let s = &h.state().session;
+        super::row_folder_label(s, s.mailbox.folder(s.mailbox.message(id).unwrap().folder).unwrap())
+    };
+    harness.state_mut().execute("folder.select", json!({"combined": "inbox"})).unwrap();
+    harness.run_steps(3);
+    let theirs = crate::nav::account_label(harness.state().session.mailbox.account(second).unwrap());
+    assert_eq!(label(&harness, moved), theirs);
+    // One folder again: the folder's name, as before.
+    let inbox = harness.state().session.mailbox.folder_of_kind(first, FolderKind::Inbox).unwrap();
+    harness.state_mut().execute("folder.select", json!({"id": inbox})).unwrap();
+    assert_ne!(label(&harness, moved), theirs);
+}

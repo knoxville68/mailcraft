@@ -54,6 +54,29 @@ const STRIP_W: f32 = 30.0;
 /// folders' ids and the accounts' (an account's heading folds under the account's own id).
 /// Accounts and folders are numbered from 1 in one sequence, so none of the three collide.
 const FAVORITES: Id = 0;
+
+/// The ids "All Inboxes" and the other combined entries under Favorites are folded under in
+/// `UiState::collapsed_folders`: far past any folder's, one for each standard kind.
+const COMBINED: Id = u64::MAX - 64;
+
+/// The key a combined entry of `kind` is folded under.
+fn combined_key(kind: FolderKind) -> Id {
+    COMBINED.saturating_add(FolderKind::STANDARD.iter().position(|k| *k == kind).unwrap_or(0) as Id)
+}
+
+/// What the pane calls the combined entry of `kind` under Favorites.
+fn combined_name(kind: FolderKind) -> &'static str {
+    match kind {
+        FolderKind::Inbox => tl!("All Inboxes"),
+        FolderKind::Drafts => tl!("All Drafts"),
+        FolderKind::Sent => tl!("All Sent Items"),
+        FolderKind::Deleted => tl!("All Deleted Items"),
+        FolderKind::Junk => tl!("All Junk Email"),
+        FolderKind::Archive => tl!("All Archives"),
+        FolderKind::Outbox => tl!("All Outboxes"),
+        FolderKind::Custom => tl!("Folders"),
+    }
+}
 /// The dot of an account's colour after its name in its heading (#893), and the room it takes there.
 const ACCOUNT_DOT_RADIUS: f32 = 4.5;
 const ACCOUNT_DOT_ROOM: f32 = 16.0;
@@ -620,7 +643,7 @@ fn picked_in_list(ui: &Ui) -> bool {
 fn folder_row(app: &mut MailApp, ui: &mut Ui, f: &Folder, depth: usize, has_children: bool, key: &str, count: Count, selected: bool) {
     // Under Favorites a shared mailbox's folder says whose it is (#70), and so does one whose name
     // another account's folder has too (two Inboxes); in its tree, its name.
-    let name = if key == "fav" { result_folder_label(&app.session.mailbox, f) } else { folder_name(f).to_string() };
+    let name = if key == "fav" || key == "all" { result_folder_label(&app.session.mailbox, f) } else { folder_name(f).to_string() };
     let t = Tokens::get(ui.ctx());
     // An account whose Favorites are Outlook's has them changed in Outlook: nothing to do here.
     let from_outlook = mailcraft_engine::cmd::folder::favorites_from_server(&app.session, f.account);
@@ -729,6 +752,7 @@ fn folder_row(app: &mut MailApp, ui: &mut Ui, f: &Folder, depth: usize, has_chil
     // folder either: #756.)
     let (id, custom, favorite, kind) = (f.id, f.kind == FolderKind::Custom && !f.server_owned(), f.favorite, f.kind);
     let takes_folders = !(f.kind == FolderKind::Custom && f.server_owned());
+    let f_parent_none = f.parent.is_none();
     resp.context_menu(|ui| {
         ui.set_min_width(190.0);
         let item = |ui: &mut Ui, app: &mut MailApp, label: &str, cmd: &str, params: serde_json::Value, enabled: bool| {
@@ -749,6 +773,16 @@ fn folder_row(app: &mut MailApp, ui: &mut Ui, f: &Folder, depth: usize, has_chil
                     }
                     ui.close();
                 }
+            }
+            ui.separator();
+        }
+        // Its kind's folder of every account as one entry under Favorites ("All Inboxes").
+        if kind != FolderKind::Custom && f_parent_none {
+            let shown = app.session.prefs.combined_favorites.contains(&kind);
+            let label = if shown { tl!("Remove All of This Kind from Favorites") } else { tl!("Show All of This Kind in Favorites") };
+            if ui.button(label).clicked() {
+                let _ = app.run("folder.favoriteCombined", json!({"kind": kind.code(), "value": !shown}));
+                ui.close();
             }
             ui.separator();
         }
@@ -803,6 +837,66 @@ fn gmail_hit(category: GmailCategory) -> &'static str {
         GmailCategory::Updates => "gmailUpdates",
         GmailCategory::Forums => "gmailForums",
     }
+}
+
+/// The row of a combined entry under Favorites ("All Inboxes"): a chevron that shows or hides
+/// each account's folder of its kind under it, its name and its unread, `selected` when the list
+/// shows it. A click shows the mail of all of them as one list; its menu takes it off Favorites.
+fn combined_row(app: &mut MailApp, ui: &mut Ui, kind: FolderKind, unread: usize, selected: bool) {
+    let t = Tokens::get(ui.ctx());
+    let key = combined_key(kind);
+    let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_H), Sense::hover());
+    let resp = ui.interact(r, ui.scope_id().with(("combined", kind.code())), Sense::click());
+    let row = highlight(r).shrink2(vec2(0.0, ROW_HIGHLIGHT_INSET));
+    if selected {
+        ui.painter().rect_filled(row, 6.0, t.accent_soft);
+        ui.painter().rect_filled(Rect::from_center_size(pos2(row.min.x + 1.5, row.center().y), vec2(3.0, 14.0)), 1.5, t.selection_edge);
+    } else if resp.hovered() {
+        ui.painter().rect_filled(row, 6.0, t.hover_nav);
+    }
+    if resp.has_focus() {
+        ui.painter().rect_stroke(row, 6.0, Stroke::new(1.5, t.accent), egui::StrokeKind::Inside);
+    }
+    let x = r.min.x;
+    let tr = Rect::from_min_max(pos2(x + HIGHLIGHT_LEFT, r.min.y), pos2(x + NAME_LEFT, r.max.y));
+    let tresp = ui.interact(tr, ui.scope_id().with(("combined", "twisty", kind.code())), Sense::click());
+    let open = !app.ui.collapsed_folders.contains(&key);
+    chevron(ui.painter(), pos2(x + CHEVRON_X, r.center().y), ROW_CHEVRON, open, if tresp.hovered() { t.accent_text } else { t.text });
+    if tresp.clicked() {
+        let _ = app.execute("ui.toggleFolder", json!({"id": key}));
+    }
+    let y = r.center().y;
+    let mut name_end = r.max.x - COUNT_RIGHT;
+    if unread > 0 {
+        let fill = if selected { t.surface } else { t.accent_soft };
+        let galley = ui.painter().layout_no_wrap(unread.to_string(), bold(NAME_SIZE - 1.0), t.accent_soft_text);
+        let w = (galley.size().x + 12.0).max(20.0);
+        let pill = Rect::from_center_size(pos2(r.max.x - COUNT_RIGHT + 4.0 - w / 2.0, r.center().y), vec2(w, 18.0));
+        ui.painter().rect_filled(pill, 9.0, fill);
+        ui.painter().galley(pill.center() - galley.size() / 2.0, galley, t.accent_soft_text);
+        name_end = pill.min.x - 6.0;
+    }
+    let name = combined_name(kind);
+    let font = if selected { bold(NAME_SIZE) } else { regular(NAME_SIZE) };
+    paint_clipped(
+        ui.painter(),
+        pos2(x + NAME_LEFT, y),
+        (name_end - x - NAME_LEFT).max(0.0),
+        name,
+        font,
+        if selected { t.accent_soft_text } else { t.text },
+    );
+    let said = if unread > 0 { format!("{name}, {}", tln!(unread, "{n} unread", "{n} unread")) } else { name.to_string() };
+    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::TreeItem, true, selected, &said));
+    if resp.clicked() {
+        let _ = app.run("folder.select", json!({"combined": kind.code()}));
+    }
+    resp.context_menu(|ui| {
+        if ui.button(tl!("Remove from Favorites")).clicked() {
+            let _ = app.run("folder.favoriteCombined", json!({"kind": kind.code(), "value": false}));
+            ui.close();
+        }
+    });
 }
 
 /// The row of one of Gmail's categories under a Gmail account's Inbox (#911), a level further in
@@ -1073,7 +1167,27 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
             // they are tabs above the list instead (`view.gmailCategories`), the Inbox's is.
             let gmail_tabs = app.session.view.gmail_tabs;
             let gmail_now = mailcraft_engine::gmail::in_view(&app.session);
-            let current = if gmail_now.is_some() && !gmail_tabs { 0 } else { app.session.view.folder };
+            // ("All Inboxes" in view: its own row is highlighted, none of its folders'.)
+            let combined_now = app.session.combined();
+            let current = if (gmail_now.is_some() && !gmail_tabs) || combined_now.is_some() { 0 } else { app.session.view.folder };
+            // The combined entries under Favorites, each with its accounts' folders.
+            let combined: Vec<(FolderKind, Vec<Folder>)> = app
+                .session
+                .prefs
+                .combined_favorites
+                .iter()
+                .map(|k| {
+                    let mb = &app.session.mailbox;
+                    (
+                        *k,
+                        mailcraft_engine::cmd::folder::combined_folders(mb, *k)
+                            .into_iter()
+                            .filter_map(|id| mb.folder(id).cloned())
+                            .collect::<Vec<_>>(),
+                    )
+                })
+                .filter(|(_, folders)| !folders.is_empty())
+                .collect();
             let gmail_current = app.session.view.folder;
             let among_favorites = !folded.contains(&FAVORITES) && favorites.iter().any(|f| f.id == current);
             let in_a_list = lists.iter().any(|(_, _, rows)| rows.iter().any(|(f, _, _)| f.id == current));
@@ -1093,9 +1207,18 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
                     heading(app, ui, id, name, 2.0 * ROW_H, 34.5, true, movable.contains(&id))
                 }
             };
-            if (!favorites.is_empty() || note.is_some()) && head(app, ui, FAVORITES, tl!("Favorites")) {
+            if (!favorites.is_empty() || note.is_some() || !combined.is_empty()) && head(app, ui, FAVORITES, tl!("Favorites")) {
                 if let Some((account, note)) = &note {
                     favorites_note(app, ui, *account, note);
+                }
+                for (kind, folders) in &combined {
+                    let unread = folders.iter().fold(0usize, |n, f| n.saturating_add(counts.folder(f.id).unread));
+                    combined_row(app, ui, *kind, unread, combined_now == Some(*kind));
+                    if !app.ui.collapsed_folders.contains(&combined_key(*kind)) {
+                        for f in folders {
+                            folder_row(app, ui, f, 1, false, "all", count(f), false);
+                        }
+                    }
                 }
                 for f in &favorites {
                     folder_row(app, ui, f, 0, false, "fav", count(f), favorite_selected && f.id == current);

@@ -15,7 +15,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("folder.select", "Go to Folder", "Folder", select)
             .reads()
             .key("Mod+Y")
-            .params(r#"{"folder": number | "sent" | "Inbox/Projects", "account"?: number} (an id; a standard folder's kind, inbox, drafts, sent, deleted, junk, archive or outbox, in any language of the mailbox, of `account` or else the account in view; otherwise a path, which is looked for in `account`, or without it in the account in view before any other, and digits that name no folder an id. A kind comes before a folder of that name, which is still reached by its id or by a path with its parent; `folder` comes before `id`, `kind` and `path`. `account` is an account that is there, and what it names must be that account's, in every form: a folder of another account's, by its id, its kind or its path, is refused rather than quietly given. A shared mailbox is an account of its own here, so its folders are its id's, not those of the account it is opened through) | {"id": number, "account"?: number} | {"kind": "inbox"|"drafts"|"sent"|"deleted"|"junk"|"archive"|"outbox", "account"?: number} | {"path": "Inbox/Projects", "account"?: number}, and "gmail"?: "primary"|"social"|"promotions"|"updates"|"forums" (the Inbox of a Gmail account whose categories are shown: its mail Gmail put in that category, #911)"#),
+            .params(r#"{"folder": number | "sent" | "Inbox/Projects", "account"?: number} (an id; a standard folder's kind, inbox, drafts, sent, deleted, junk, archive or outbox, in any language of the mailbox, of `account` or else the account in view; otherwise a path, which is looked for in `account`, or without it in the account in view before any other, and digits that name no folder an id. A kind comes before a folder of that name, which is still reached by its id or by a path with its parent; `folder` comes before `id`, `kind` and `path`. `account` is an account that is there, and what it names must be that account's, in every form: a folder of another account's, by its id, its kind or its path, is refused rather than quietly given. A shared mailbox is an account of its own here, so its folders are its id's, not those of the account it is opened through) | {"id": number, "account"?: number} | {"kind": "inbox"|"drafts"|"sent"|"deleted"|"junk"|"archive"|"outbox", "account"?: number} | {"path": "Inbox/Projects", "account"?: number}, and "gmail"?: "primary"|"social"|"promotions"|"updates"|"forums" (the Inbox of a Gmail account whose categories are shown: its mail Gmail put in that category, #911) | {"combined": "inbox"|"drafts"|"sent"|"archive"|… (a standard kind)} — that kind's folder of every account as one list, as Favorites' "All Inboxes" shows it; what is done to a message there is done in its own folder; answers "combined" with the kind and "folders": the folders it shows"#),
         CommandSpec::new("folder.list", "List Folders", "Folder", list).reads().params(
             r#"{} — every account's folder tree with each folder's messages and unread, and for each account its own "unread" (a shared mailbox's are on its own entry, with "sharedOf": the account it is opened through, and never added to that account's), "favoritesFrom", and "favorites": what the pane lists under Favorites, in its order"#,
         ),
@@ -33,6 +33,9 @@ pub fn specs() -> Vec<CommandSpec> {
         ),
         CommandSpec::new("folder.reorderFavorite", "Move Favorite Up or Down", "Folder Pane", reorder_favorite).params(
             r#"{"id": number, "before"?: number | null} — puts a favourite kept in MailCraft in another place under Favorites, as dragging it there does (#1514): right before the favourite `before` names, or last without one. Refused for the Favorites of an account whose Favorites come from its server (Outlook's list, in Outlook's order, changed in Outlook; `view.favorites` says which accounts those are), as `id` or as `before`. The order is kept in the mailbox, never sent to a server; a folder taken off Favorites and put back goes last. Answers {"moved": bool, "favorites": [id] (what the pane lists under Favorites, in its order)}"#,
+        ),
+        CommandSpec::new("folder.favoriteCombined", "Show All of a Kind in Favorites", "Folder Pane", favorite_combined).pure().params(
+            r#"{"kind": "inbox"|"drafts"|"sent"|"deleted"|"junk"|"archive"|"outbox", "value"?: bool (default: toggle)} — lists that kind's folder of every account as one entry under Favorites ("All Inboxes"), which shows their mail together and opens to show each account's. Kept with the window's settings, never in the mailbox nor on a server; nothing about Outlook's own Favorites changes. Answers {"kind", "shown": bool, "combined": [kind] (the entries in the pane's order)}"#,
         ),
         CommandSpec::new("view.favorites", "Favorites from Outlook", "File › Options", favorites_command).pure().params(
             r#"{"own"?: bool} — "own": true shows the Favorites that are marked here even for an account whose server has a list of its own, false the server's list where there is one (default: as it is). Answers what the folder pane lists under Favorites, in its order: {"own": bool, "favorites": [{"id", "name", "account", "path"}], "accounts": [{"account": number, "from": "server" | "mailbox", "listed": number}]}"#,
@@ -192,7 +195,16 @@ const FOLDER: &str = r#"{"id"?: number} (default: the folder in view). An `id` t
 pub const FROM_OUTLOOK: &str =
     "This account's Favorites come from Outlook and are changed there (File › Options can show the ones kept in MailCraft instead)";
 
+/// Why a command for the one folder in view waits while a combined row (All Inboxes …) is shown:
+/// it holds the folders of every account, and which one is meant can't be told.
+pub(crate) fn combined_view(s: &Session) -> Option<&'static str> {
+    s.combined().map(|_| "this shows the folders of every account: pick one of them first")
+}
+
 fn can_empty(s: &Session) -> Option<&'static str> {
+    if let r @ Some(_) = combined_view(s) {
+        return r;
+    }
     if s.mailbox.count(s.view.folder) == 0 {
         return Some("the folder is already empty");
     }
@@ -205,6 +217,9 @@ fn can_empty(s: &Session) -> Option<&'static str> {
 /// History and the like, #756; [`mailcraft_model::Folder::server_owned`]). The reason is written
 /// out here, in a `fn …(s: &Session) -> Option<&'static str>`, so `cargo xtask i18n` finds it.
 fn server_owned(s: &Session) -> Option<&'static str> {
+    if let r @ Some(_) = combined_view(s) {
+        return r;
+    }
     if s.mailbox.folder(s.view.folder).is_some_and(|f| f.server_owned()) {
         return Some("the server keeps this folder: it can't be renamed, moved or deleted");
     }
@@ -238,8 +253,20 @@ fn can_delete(s: &Session) -> Option<&'static str> {
     s.mailbox.folder_stays_on_server(s.view.folder).then_some(mailcraft_model::FOLDERS_NOT_DELETED_YET)
 }
 
+/// The folder in view, for a command that acts on one folder and was named none; refused while a
+/// combined row (All Inboxes …) is shown, where "the folder in view" is only one of those listed.
+pub(crate) fn folder_in_view(s: &Session) -> Result<Id, CmdError> {
+    match s.combined() {
+        Some(_) => Err(fail("this shows the folders of every account: pick one of them first")),
+        None => Ok(s.view.folder),
+    }
+}
+
 fn target(s: &Session, v: &Value) -> Result<Id, CmdError> {
-    let id = p::id_strict(v, "id")?.unwrap_or(s.view.folder);
+    let id = match p::id_strict(v, "id")? {
+        Some(id) => id,
+        None => folder_in_view(s)?,
+    };
     s.mailbox.folder(id).map(|f| f.id).ok_or_else(|| failed!("no folder with id {id}", id))
 }
 
@@ -353,6 +380,9 @@ pub(crate) fn account_named(s: &Session, v: &Value) -> Result<Option<Id>, CmdErr
 }
 
 fn select(s: &mut Session, v: &Value) -> CmdResult {
+    if let Some(kind) = v.get("combined").filter(|k| !k.is_null()) {
+        return select_combined(s, kind);
+    }
     let account = account_named(s, v)?;
     let id = if let Some(folder) = v.get("folder").filter(|f| !f.is_null()) {
         named(s, folder, account)?
@@ -383,7 +413,8 @@ fn select(s: &mut Session, v: &Value) -> CmdResult {
         }
         Some(_) => return Err(bad("`gmail` is primary, social, promotions, updates or forums")),
     };
-    if s.view.folder != id || s.view.module != Module::Mail || s.view.gmail != gmail {
+    if s.view.folder != id || s.view.module != Module::Mail || s.view.gmail != gmail || s.combined().is_some() {
+        s.view.combined = None;
         s.view.folder = id;
         s.view.module = Module::Mail;
         s.view.gmail = gmail;
@@ -524,6 +555,64 @@ fn favorite(s: &mut Session, v: &Value) -> CmdResult {
         f.favorite_place = None;
     }
     Ok(json!({"id": id, "favorite": f.favorite}))
+}
+
+/// The standard kind a `combined` or `kind` param names; Custom isn't one.
+fn standard_kind(v: &Value) -> Result<FolderKind, CmdError> {
+    v.as_str()
+        .and_then(FolderKind::parse)
+        .filter(|k| *k != FolderKind::Custom)
+        .ok_or_else(|| bad("the kind is inbox, drafts, sent, deleted, junk, archive or outbox"))
+}
+
+/// The folder of `kind` of every account, in the pane's order of accounts: what Favorites' "All
+/// Inboxes" (and the like) shows as one list. An account of a kind this program doesn't know has
+/// none here, as it is never read or changed.
+pub fn combined_folders(mb: &mailcraft_model::Mailbox, kind: FolderKind) -> Vec<Id> {
+    mb.accounts_in_order()
+        .into_iter()
+        .filter(|a| a.kind != mailcraft_model::AccountKind::Unknown)
+        // The owner's own accounts only: a mailbox shared with them is someone else's mail.
+        .filter(|a| a.shared_of.is_none())
+        .filter_map(|a| mb.folder_of_kind(a.id, kind))
+        .collect()
+}
+
+fn select_combined(s: &mut Session, kind: &Value) -> CmdResult {
+    let kind = standard_kind(kind)?;
+    let folders = combined_folders(&s.mailbox, kind);
+    // The folder in view stays one of them (the account in view's, when it has one), so that
+    // what acts on "the folder in view" acts on a folder that is shown.
+    let in_view = s.mailbox.folder(s.view.folder).map(|f| f.account);
+    let anchor = in_view
+        .and_then(|a| s.mailbox.folder_of_kind(a, kind))
+        .filter(|f| folders.contains(f))
+        .or_else(|| folders.first().copied())
+        .ok_or_else(|| failed!("no {folder} folder", folder = mailcraft_i18n::Arg::folder(kind.default_name())))?;
+    if s.combined() != Some(kind) || s.view.folder != anchor {
+        s.sel.messages.clear();
+    }
+    s.view.folder = anchor;
+    s.view.module = Module::Mail;
+    s.view.gmail = None;
+    s.view.combined = Some((kind, anchor));
+    s.view.search.clear();
+    let counts = s.folder_counts();
+    let (messages, unread) =
+        folders.iter().fold((0usize, 0usize), |(m, u), f| (m.saturating_add(counts.total(*f)), u.saturating_add(counts.unread(*f))));
+    Ok(json!({"folder": anchor, "combined": kind.code(), "folders": folders, "messages": messages, "unread": unread}))
+}
+
+fn favorite_combined(s: &mut Session, v: &Value) -> CmdResult {
+    let kind = standard_kind(v.get("kind").unwrap_or(&Value::Null))?;
+    let listed = &mut s.prefs.combined_favorites;
+    let shown = p::bool(v, "value").unwrap_or(!listed.contains(&kind));
+    listed.retain(|k| *k != kind);
+    if shown {
+        listed.push(kind);
+    }
+    let combined: Vec<&str> = listed.iter().map(|k| k.code()).collect();
+    Ok(json!({"kind": kind.code(), "shown": shown, "combined": combined}))
 }
 
 /// The folders that go with a folder when it is emptied: those deleted into Deleted Items, when it

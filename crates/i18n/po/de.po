@@ -1134,6 +1134,12 @@ msgid "All"
 msgstr "Alle"
 
 #. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Archives"
+msgstr "Alle Archive"
+
+#. interface
 #: crates/ui-egui/src/scheduling.rs
 #, fuzzy
 msgid "All Attendees"
@@ -1152,10 +1158,46 @@ msgid "All Categories…"
 msgstr "Alle Kategorien…"
 
 #. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Deleted Items"
+msgstr "Alle gelöschten Elemente"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Drafts"
+msgstr "Alle Entwürfe"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Inboxes"
+msgstr "Alle Posteingänge"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Junk Email"
+msgstr "Alle Junk-E-Mails"
+
+#. interface
 #: crates/ui-egui/src/chrome.rs crates/ui-egui/src/mail_view.rs
 #, fuzzy
 msgid "All Mailboxes"
 msgstr "Alle Postfächer"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Outboxes"
+msgstr "Alle Postausgänge"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "All Sent Items"
+msgstr "Alle gesendeten Elemente"
 
 #. android, interface
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/MailListBar.kt crates/ui-egui/src/address_book.rs crates/ui-egui/src/widgets.rs
@@ -5478,8 +5520,8 @@ msgstr "Ordnername"
 msgid "Folder {folder} ({n} of {of})"
 msgstr "Ordner {folder} ({n} von {of})"
 
-#. name
-#: crates/model/src/sync/progress.rs
+#. interface, name
+#: crates/model/src/sync/progress.rs crates/ui-egui/src/nav.rs
 #, fuzzy
 msgid "Folders"
 msgstr "Ordner"
@@ -11853,6 +11895,12 @@ msgstr ""
 msgid "Remove Account"
 msgstr "Konto entfernen"
 
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "Remove All of This Kind from Favorites"
+msgstr "Alle dieser Art aus Favoriten entfernen"
+
 #. command label, interface
 #: crates/engine/src/cmd/compose.rs crates/engine/src/cmd/mail.rs crates/ui-egui/src/reading.rs
 #, fuzzy
@@ -13760,6 +13808,18 @@ msgid ""
 msgstr ""
 "Training\n"
 "anzeigen"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+#, fuzzy
+msgid "Show All of This Kind in Favorites"
+msgstr "Alle dieser Art in Favoriten zeigen"
+
+#. command label
+#: crates/engine/src/cmd/folder.rs
+#, fuzzy
+msgid "Show All of a Kind in Favorites"
+msgstr "Alle einer Art in Favoriten zeigen"
 
 #. command label, interface, ribbon
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/forms.rs crates/ui-egui/src/ribbon.rs
@@ -22139,6 +22199,12 @@ msgstr "diese Serie hat zu viele abgesagte Tage"
 #, fuzzy
 msgid "this series has too many changed days"
 msgstr "diese Serie hat zu viele geänderte Tage"
+
+#. what a command says
+#: crates/engine/src/cmd/folder.rs
+#, fuzzy
+msgid "this shows the folders of every account: pick one of them first"
+msgstr "hier stehen die Ordner aller Konten: Wählen Sie zuerst einen davon aus"
 
 #. interface
 #: crates/ui-egui/src/forms.rs

@@ -376,7 +376,10 @@ fn run_on(s: &mut Session, folder: Id, only: Option<Id>) -> usize {
 }
 
 fn run(s: &mut Session, v: &Value) -> CmdResult {
-    let folder = p::id_strict(v, "folder")?.unwrap_or(s.view.folder);
+    let folder = match p::id_strict(v, "folder")? {
+        Some(folder) => folder,
+        None => super::folder::folder_in_view(s)?,
+    };
     let only = p::id_strict(v, "id")?;
     if s.mailbox.folder(folder).is_none() {
         return Err(failed!("no folder with id {id}", id = folder));

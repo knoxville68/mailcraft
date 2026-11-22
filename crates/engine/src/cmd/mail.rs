@@ -54,7 +54,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("mail.markUnread", "Mark as Unread", "Home › Tags", mark_unread).key("Mod+U").params(IDS).selection(needs_message),
         CommandSpec::new("mail.toggleRead", "Unread/ Read", "Home › Tags", toggle_read).params(IDS).selection(needs_message),
         CommandSpec::new("mail.markAllRead", "Mark All as Read", "Folder › Clean Up", mark_all_read)
-            .params(r#"{"folder"?: number} — a folder that is there, read strictly: an id as text, `null`, `0` or a fraction is refused rather than taken for the folder in view (default: the folder in view). Answers {"folder", "changed"}"#),
+            .params(r#"{"folder"?: number} — a folder that is there, read strictly: an id as text, `null`, `0` or a fraction is refused rather than taken for the folder in view (default: the folder in view; with All Inboxes or another combined row in view, every account's folder of that kind). Answers {"folder", "folders", "changed"}"#),
         CommandSpec::new("mail.flag", "Follow Up", "Home › Tags", flag)
             .key("Insert")
             .params(r#"{"due"?: "YYYY-MM-DD", "ids"?: [number]}"#)
@@ -868,15 +868,21 @@ fn toggle_read(s: &mut Session, v: &Value) -> CmdResult {
 fn mark_all_read(s: &mut Session, v: &Value) -> CmdResult {
     // An id, read strictly (#1449): an id as text or `null` is refused, never taken to mean the
     // folder in view, which would mark all of another folder's mail read without a word.
-    let folder = p::id_strict(v, "folder")?.unwrap_or(s.view.folder);
+    let named = p::id_strict(v, "folder")?;
+    let folder = named.unwrap_or(s.view.folder);
     if s.mailbox.folder(folder).is_none() {
         return Err(failed!("no folder with id {id}", id = folder));
     }
-    let ids: Vec<Id> = s.mailbox.messages_in(folder).filter(|m| !m.read).map(|m| m.id).collect();
+    // A combined row in view (All Inboxes …): every account's folder of that kind.
+    let folders = match (named, s.combined()) {
+        (None, Some(kind)) => super::folder::combined_folders(&s.mailbox, kind),
+        _ => vec![folder],
+    };
+    let ids: Vec<Id> = folders.iter().flat_map(|f| s.mailbox.messages_in(*f)).filter(|m| !m.read).map(|m| m.id).collect();
     for id in &ids {
         s.mailbox.message_mut(*id)?.read = true;
     }
-    Ok(json!({"folder": folder, "changed": ids.len()}))
+    Ok(json!({"folder": folder, "folders": folders, "changed": ids.len()}))
 }
 
 fn flag(s: &mut Session, v: &Value) -> CmdResult {

@@ -56,6 +56,8 @@ mod favorites_tests;
 pub mod file;
 pub mod folder;
 #[cfg(test)]
+mod folder_combined_tests;
+#[cfg(test)]
 mod folder_empty_tests;
 #[cfg(test)]
 mod folder_kind_tests;

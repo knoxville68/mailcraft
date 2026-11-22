@@ -267,6 +267,8 @@ const SAFE: &[&str] = &[
     // computer alone.
     "folder.reorder",
     "folder.reorderFavorite",
+    // Which combined rows (All Inboxes …) Favorites shows: the window's own settings alone.
+    "folder.favoriteCombined",
     // Takes up again messages left out for failing to download (#1581): the next Send/Receive asks for them.
     "sync.retryFailed",
     // View.

@@ -205,7 +205,11 @@ fn view_folders(s: &Session) -> (bool, HashSet<Id>) {
     };
     // The folders looked in, or (for every mailbox) the folders left out.
     let (everywhere, folders): (bool, HashSet<Id>) = match scope {
-        Scope::Folder => (false, HashSet::from([folder])),
+        Scope::Folder => match s.combined() {
+            // "All Inboxes" and the like: that kind's folder of every account.
+            Some(kind) => (false, crate::cmd::folder::combined_folders(mb, kind).into_iter().collect()),
+            None => (false, HashSet::from([folder])),
+        },
         Scope::Subfolders => (false, mb.subtree(folder).into_iter().collect()),
         Scope::Mailbox => {
             let account = mb.folder(folder).map(|f| f.account);

@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use mailcraft_model::shown::{ShownIds, shown_ids};
-use mailcraft_model::{AccountChoice, Attachment, Category, ContentRef, Id, Importance, Mailbox, Message, RichBody};
+use mailcraft_model::{AccountChoice, Attachment, Category, ContentRef, FolderKind, Id, Importance, Mailbox, Message, RichBody};
 use mailcraft_time::{Date, DateTime, Timestamp, Weekday, Zone};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -297,6 +297,12 @@ pub struct ViewState {
     /// the whole folder. Not kept between sessions: the window opens on the whole folder.
     #[serde(skip)]
     pub gmail: Option<(Id, mailcraft_model::GmailCategory)>,
+    /// The folders of one kind of every account shown as one list, as under Favorites' "All
+    /// Inboxes" (`folder.select` with `combined`): the kind, and the folder in view it was chosen
+    /// with. It counts only while that folder is still the one in view ([`Session::combined`]), so
+    /// whatever else changes the folder in view leaves it. Not kept between sessions.
+    #[serde(skip)]
+    pub combined: Option<(FolderKind, Id)>,
     /// Gmail's categories as a row of tabs above a Gmail Inbox's list, in place of the five
     /// folders under it in the folder pane (#911; `view.gmailCategories`). Off: as folders.
     pub gmail_tabs: bool,
@@ -349,6 +355,7 @@ impl Default for ViewState {
             open: Vec::new(),
             filter: Filter::All,
             gmail: None,
+            combined: None,
             gmail_tabs: false,
             search: String::new(),
             scope: Scope::Folder,
@@ -892,6 +899,11 @@ pub struct Prefs {
     /// owner turns it on: the server's list is shown where there is one.
     #[serde(skip_serializing_if = "is_false")]
     pub own_favorites: bool,
+    /// The kinds of folder the pane lists under Favorites as one entry for every account ("All
+    /// Inboxes", `folder.favoriteCombined`), in the order they were added. Kept with the window's
+    /// settings, never in the mailbox nor on a server.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub combined_favorites: Vec<FolderKind>,
     /// The time zone the calendar is shown in, by name (`Europe/Berlin`; `view.timeZone`).
     /// Empty: this computer's own, followed when it changes.
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -956,6 +968,7 @@ impl Default for Prefs {
             own_work_hours: false,
             mailbox_hours: None,
             own_favorites: false,
+            combined_favorites: Vec::new(),
             time_zone: String::new(),
             second_zone: String::new(),
             zone_label: String::new(),
@@ -1331,6 +1344,15 @@ impl Swaps {
 }
 
 impl Session {
+    /// The kind of folder whose folders of every account the list shows as one ("All Inboxes"),
+    /// while the folder it was chosen with is still the one in view in Mail.
+    pub fn combined(&self) -> Option<FolderKind> {
+        match self.view.combined {
+            Some((kind, anchor)) if anchor == self.view.folder && self.view.module == Module::Mail => Some(kind),
+            _ => None,
+        }
+    }
+
     pub fn new(mailbox: Mailbox) -> Self {
         Session::with_clock(mailbox, Clock::default())
     }
@@ -2057,7 +2079,7 @@ impl Session {
     /// What the message list is built from, but for the content brought into memory or let go of.
     fn list_state(&self) -> String {
         format!(
-            "{}|{}|{}|{}|{}|{}|{:?}|{}",
+            "{}|{}|{}|{}|{}|{}|{:?}|{:?}|{}",
             self.rev,
             self.today().to_days(),
             // `received:"last week"` is other days for another first day of the week, and
@@ -2068,6 +2090,8 @@ impl Session {
             self.prefs.show_groups,
             // (Not saved with the rest of the view, so not in its text.)
             self.view.gmail,
+            // All Inboxes and the like aren't saved with the view either.
+            self.combined(),
             serde_json::to_string(&self.view).unwrap_or_default()
         )
     }

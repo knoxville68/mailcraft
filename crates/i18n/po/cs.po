@@ -1197,6 +1197,11 @@ msgid "All"
 msgstr "Vše"
 
 #. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Archives"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/scheduling.rs
 #, fuzzy
 msgid "All Attendees"
@@ -1215,10 +1220,40 @@ msgid "All Categories…"
 msgstr "Všechny kategorie…"
 
 #. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Deleted Items"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Drafts"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Inboxes"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Junk Email"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/chrome.rs crates/ui-egui/src/mail_view.rs
 #, fuzzy
 msgid "All Mailboxes"
 msgstr "Všechny poštovní schránky"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Outboxes"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "All Sent Items"
+msgstr ""
 
 #. android, interface
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/MailListBar.kt crates/ui-egui/src/address_book.rs crates/ui-egui/src/widgets.rs
@@ -5833,8 +5868,8 @@ msgstr "Název složky"
 msgid "Folder {folder} ({n} of {of})"
 msgstr "Složka {folder} ({n} z {of})"
 
-#. name
-#: crates/model/src/sync/progress.rs
+#. interface, name
+#: crates/model/src/sync/progress.rs crates/ui-egui/src/nav.rs
 #, fuzzy
 msgid "Folders"
 msgstr "Složky"
@@ -12689,6 +12724,11 @@ msgstr ""
 msgid "Remove Account"
 msgstr "Odebrat účet"
 
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "Remove All of This Kind from Favorites"
+msgstr ""
+
 #. command label, interface
 #: crates/engine/src/cmd/compose.rs crates/engine/src/cmd/mail.rs crates/ui-egui/src/reading.rs
 #, fuzzy
@@ -14697,6 +14737,16 @@ msgid ""
 msgstr ""
 "Zobrazit\n"
 "školení"
+
+#. interface
+#: crates/ui-egui/src/nav.rs
+msgid "Show All of This Kind in Favorites"
+msgstr ""
+
+#. command label
+#: crates/engine/src/cmd/folder.rs
+msgid "Show All of a Kind in Favorites"
+msgstr ""
 
 #. command label, interface, ribbon
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/forms.rs crates/ui-egui/src/ribbon.rs
@@ -23622,6 +23672,11 @@ msgstr "tato řada má příliš mnoho zrušených dnů"
 #, fuzzy
 msgid "this series has too many changed days"
 msgstr "tato řada má příliš mnoho změněných dnů"
+
+#. what a command says
+#: crates/engine/src/cmd/folder.rs
+msgid "this shows the folders of every account: pick one of them first"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs

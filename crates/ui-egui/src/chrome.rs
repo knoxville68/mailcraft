@@ -468,9 +468,13 @@ pub fn status_bar(app: &mut MailApp, ui: &mut Ui) {
                         // (Counted once per change, not at every frame: `Session::folder_counts`.)
                         // Of the Gmail category in view, when one is (#911).
                         let counts = app.session.folder_counts();
-                        let unread = match mailcraft_engine::gmail::in_view(&app.session) {
-                            Some(category) => counts.gmail(folder, category).unread,
-                            None => counts.unread(folder),
+                        let unread = match (mailcraft_engine::gmail::in_view(&app.session), app.session.combined()) {
+                            (Some(category), _) => counts.gmail(folder, category).unread,
+                            // "All Inboxes": every account's of that kind.
+                            (None, Some(kind)) => mailcraft_engine::cmd::folder::combined_folders(&app.session.mailbox, kind)
+                                .into_iter()
+                                .fold(0usize, |n, f| n.saturating_add(counts.unread(f))),
+                            (None, None) => counts.unread(folder),
                         };
                         if unread > 0 {
                             st(ui, &crate::i18n::fmt(tl!("Unread: {n}"), &[("n", &unread.to_string())]), t.text_dim);
