@@ -226,6 +226,55 @@ fn two_accounts_inboxes_among_the_favorites_are_told_apart() {
     assert!(texts.iter().any(|t| t == "Inbox"), "each account's own tree keeps the plain name: {texts:?}");
 }
 
+/// With All Inboxes among the Favorites, an Inbox that is a favourite too is listed once, under
+/// it; without it, the favourite is back where it was.
+#[test]
+fn a_favourite_under_all_inboxes_is_not_listed_twice() {
+    let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    app.autosave = false;
+    let mb = &mut app.session.mailbox;
+    let first = mb.inbox().unwrap();
+    let work = mb.add_account(mailcraft_model::Account { name: "Work".into(), email: "me@work.example".into(), ..Default::default() });
+    let second = mb.folder_of_kind(work, FolderKind::Inbox).unwrap();
+    for id in [first, second] {
+        app.execute("folder.favorite", serde_json::json!({"id": id, "value": true})).unwrap();
+    }
+    let shown = |app: &mut MailApp| {
+        let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| folder_pane(app, ui));
+        out.textures_delta.clear();
+        out.shapes.iter().filter(|c| matches!(&c.shape, egui::Shape::Text(t) if t.galley.text() == "Inbox - Work")).count()
+    };
+    assert_eq!(shown(&mut app), 1);
+    app.execute("folder.favoriteCombined", serde_json::json!({"kind": "inbox", "value": true})).unwrap();
+    assert_eq!(shown(&mut app), 0, "under All Inboxes it is named by its account alone, and not listed again below it");
+    assert!(mailcraft_engine::cmd::folder::favorites(&app.session).contains(&second), "it is still a favourite");
+    app.execute("folder.favoriteCombined", serde_json::json!({"kind": "inbox", "value": false})).unwrap();
+    assert_eq!(shown(&mut app), 1);
+}
+
+/// One server calls its Inbox `INBOX`, another (Outlook's) `Posteingang`: both are shown as the
+/// German Inbox, so both say whose they are among the Favorites.
+#[test]
+fn inboxes_named_differently_on_their_servers_but_shown_alike_say_whose_they_are() {
+    use crate::i18n::{Lang, RestoreLanguage, set_current};
+    let _language = RestoreLanguage::hold();
+    let mut mb = mailcraft_engine::sample::mailbox(NOW, 0);
+    let imap = mb.add_account(mailcraft_model::Account { name: "Mail".into(), email: "me@mail.example".into(), ..Default::default() });
+    let outlook = mb.add_account(mailcraft_model::Account { name: "Outlook".into(), email: "me@outlook.example".into(), ..Default::default() });
+    let (a, b) = (mb.folder_of_kind(imap, FolderKind::Inbox).unwrap(), mb.folder_of_kind(outlook, FolderKind::Inbox).unwrap());
+    // (Kept on their servers, under those names.)
+    for (id, name) in [(a, "INBOX"), (b, "Posteingang")] {
+        let f = mb.folder_mut(id).unwrap();
+        (f.name, f.remote) = (name.into(), name.into());
+    }
+    set_current(Lang::German);
+    assert_eq!(folder_name(mb.folder(a).unwrap()), folder_name(mb.folder(b).unwrap()), "both are shown alike");
+    assert!(result_folder_label(&mb, mb.folder(b).unwrap()).ends_with(" - Outlook"));
+    assert!(result_folder_label(&mb, mb.folder(a).unwrap()).ends_with(" - Mail"));
+}
+
 /// The pane lists the folders in order down the screen, one row each, further in at each level.
 #[test]
 fn rows_go_down_the_pane_in_order() {

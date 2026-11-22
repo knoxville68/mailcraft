@@ -643,7 +643,12 @@ fn picked_in_list(ui: &Ui) -> bool {
 fn folder_row(app: &mut MailApp, ui: &mut Ui, f: &Folder, depth: usize, has_children: bool, key: &str, count: Count, selected: bool) {
     // Under Favorites a shared mailbox's folder says whose it is (#70), and so does one whose name
     // another account's folder has too (two Inboxes); in its tree, its name.
-    let name = if key == "fav" || key == "all" { result_folder_label(&app.session.mailbox, f) } else { folder_name(f).to_string() };
+    // Under All Inboxes and the like, every row is that kind's folder: its account says which.
+    let name = match key {
+        "all" => app.session.mailbox.account(f.account).map(account_label).unwrap_or_else(|| folder_name(f).to_string()),
+        "fav" => result_folder_label(&app.session.mailbox, f),
+        _ => folder_name(f).to_string(),
+    };
     let t = Tokens::get(ui.ctx());
     // An account whose Favorites are Outlook's has them changed in Outlook: nothing to do here.
     let from_outlook = mailcraft_engine::cmd::folder::favorites_from_server(&app.session, f.account);
@@ -1188,6 +1193,10 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
                 })
                 .filter(|(_, folders)| !folders.is_empty())
                 .collect();
+            // A favourite that is one of a combined entry's folders is listed under that entry
+            // alone, not again below it, as long as the entry is there (the favourite stays one).
+            let under: HashSet<Id> = combined.iter().flat_map(|(_, folders)| folders.iter().map(|f| f.id)).collect();
+            let favorites: Vec<Folder> = favorites.into_iter().filter(|f| !under.contains(&f.id)).collect();
             let gmail_current = app.session.view.folder;
             let among_favorites = !folded.contains(&FAVORITES) && favorites.iter().any(|f| f.id == current);
             let in_a_list = lists.iter().any(|(_, _, rows)| rows.iter().any(|(f, _, _)| f.id == current));
@@ -1344,11 +1353,14 @@ pub(crate) fn folder_label(mb: &Mailbox, f: &Folder) -> String {
 /// A folder's name on a row of a search of every mailbox (#195): [`folder_label`], and for a
 /// folder whose name a folder of another account of the owner's has too (two Inboxes), its
 /// account's name after it, so the row says which one. Short otherwise: the name alone. A shared
-/// mailbox's folders are named with their mailbox already, so they make no twin.
+/// mailbox's folders are named with their mailbox already, so they make no twin. Twins are told
+/// by the name shown, not the server's: one server's `INBOX` and another's `Posteingang` are both
+/// shown as the Inbox in German.
 pub(crate) fn result_folder_label(mb: &Mailbox, f: &Folder) -> String {
     let shared = mb.account(f.account).is_some_and(|a| a.is_shared());
     let own = |id: Id| mb.account(id).is_some_and(|a| !a.is_shared());
-    let twin = || mb.folders.iter().any(|o| o.account != f.account && own(o.account) && o.name.eq_ignore_ascii_case(&f.name));
+    let shown = folder_name(f);
+    let twin = || mb.folders.iter().any(|o| o.account != f.account && own(o.account) && folder_name(o).eq_ignore_ascii_case(shown));
     match mb.account(f.account) {
         Some(a) if !shared && twin() => {
             let account = if a.name.trim().is_empty() { a.email.trim() } else { a.name.trim() };

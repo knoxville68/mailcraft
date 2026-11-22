@@ -106,3 +106,15 @@ fn rows_in_all_inboxes_name_their_account_not_the_folder() {
     harness.state_mut().execute("folder.select", json!({"id": inbox})).unwrap();
     assert_ne!(label(&harness, moved), theirs);
 }
+
+#[test]
+fn in_all_inboxes_a_long_account_name_is_shown_whole_when_the_row_has_room() {
+    let (mut harness, _, second, moved) = window();
+    let long = "someone.with.a.long.name@second.example";
+    harness.state_mut().execute("account.edit", json!({"id": second, "name": long})).unwrap();
+    harness.state_mut().execute("folder.select", json!({"combined": "inbox"})).unwrap();
+    harness.state_mut().execute("mail.select", json!({"id": moved})).unwrap();
+    harness.run_steps(3);
+    let folder = harness.state().hit.rect("messageFolder", moved).expect("the row is on screen and names its account");
+    assert!(folder.width() > super::FOLDER_W + 40.0, "{folder:?}");
+}

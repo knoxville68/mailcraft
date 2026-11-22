@@ -743,10 +743,10 @@ fn plan_tags(p: &egui::Painter, labels: &[&str], more: usize, room: f32) -> TagP
     }
 }
 
-fn paint_result_folder(p: &egui::Painter, end: egui::Pos2, label: &str, t: &Tokens) -> f32 {
+fn paint_result_folder(p: &egui::Painter, end: egui::Pos2, label: &str, t: &Tokens, room: f32) -> f32 {
     const ICON: f32 = 12.0;
     const GAP: f32 = 3.0;
-    let width = FOLDER_W - ICON - GAP;
+    let width = room.max(FOLDER_W) - ICON - GAP;
     if label.is_empty() {
         return end.x;
     }
@@ -1219,7 +1219,10 @@ fn message_row_content(app: &mut MailApp, ui: &mut Ui, row: &Row, rect: Rect, dr
     if let Some(folder) = shown_folder {
         let label = row_folder_label(&app.session, folder);
         let end = sx;
-        sx = paint_result_folder(p, pos2(end, tail_y), &label, &t) - 6.0;
+        // As wide as its name, up to almost half the row (two accounts' addresses often start
+        // alike), but in a single line, where the sender's name needs the room.
+        let room = if one { FOLDER_W } else { (end - left) * 0.45 };
+        sx = paint_result_folder(p, pos2(end, tail_y), &label, &t, room) - 6.0;
         app.hit.add("messageFolder", row.id, Rect::from_min_max(pos2(sx + 6.0, tail_y - 7.0), pos2(end, tail_y + 7.0)));
     }
     // The labels' tags: planned above in a single line; under the time, in what is left down to
