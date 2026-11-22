@@ -242,6 +242,10 @@ impl eframe::App for App {
     }
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         self.0.ui(ui);
+        // Favorites' combined entries are kept at once, not only when the window closes.
+        if std::mem::take(&mut self.0.prefs_changed) {
+            save_prefs(&self.0);
+        }
         self.3.show(frame);
         open_pages(ui.ctx(), frame);
     }

@@ -1669,6 +1669,9 @@ pub struct MailApp {
     /// The Calendar Server form's search under way, with the password it signs in with
     /// ([`dav_setup`]), and how the last one came out.
     pub(crate) dav_finding: Option<dav_setup::Finding>,
+    /// Settings the owner just changed that are to be written at once rather than at the end
+    /// (the combined entries of Favorites): the host writes them and clears it.
+    pub prefs_changed: bool,
     pub(crate) dav_found: Option<Result<(), String>>,
     /// Threads removing calendar and contacts passwords from the credential store, each with what
     /// it confirmed gone ([`MailApp::poll_dav_forgetting`]).
@@ -2034,6 +2037,7 @@ impl MailApp {
             passwords: Default::default(),
             dav_passwords: Default::default(),
             dav_finding: None,
+            prefs_changed: false,
             dav_found: None,
             dav_forgetting: Vec::new(),
             dav_forget_queue: Vec::new(),
@@ -2572,6 +2576,7 @@ impl MailApp {
         send_receive::after(self, id, &r);
         // A subscribed calendar's address, which only this window keeps (#209).
         self.subscribed_after(id, &params, &r);
+        self.prefs_changed |= id == "folder.favoriteCombined" && r.is_ok();
         // Asked for the reminders: their window comes up, due or not.
         if r.is_ok() && id == "view.reminders" {
             self.reminders.asked_for = true;

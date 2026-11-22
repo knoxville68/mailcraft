@@ -904,6 +904,10 @@ pub struct Prefs {
     /// settings, never in the mailbox nor on a server.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub combined_favorites: Vec<FolderKind>,
+    /// The owner chose those entries (`folder.favoriteCombined`): until then, All Inboxes is
+    /// listed by itself once there are two accounts ([`crate::cmd::folder::combined_favorites`]).
+    #[serde(skip_serializing_if = "is_false")]
+    pub combined_chosen: bool,
     /// The time zone the calendar is shown in, by name (`Europe/Berlin`; `view.timeZone`).
     /// Empty: this computer's own, followed when it changes.
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -969,6 +973,7 @@ impl Default for Prefs {
             mailbox_hours: None,
             own_favorites: false,
             combined_favorites: Vec::new(),
+            combined_chosen: false,
             time_zone: String::new(),
             second_zone: String::new(),
             zone_label: String::new(),

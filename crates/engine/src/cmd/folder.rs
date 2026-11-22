@@ -603,15 +603,27 @@ fn select_combined(s: &mut Session, kind: &Value) -> CmdResult {
     Ok(json!({"folder": anchor, "combined": kind.code(), "folders": folders, "messages": messages, "unread": unread}))
 }
 
+/// The combined entries Favorites lists: the owner's own choice once they made one; before that,
+/// All Inboxes as soon as two of the owner's accounts have an Inbox (as Apple Mail does).
+pub fn combined_favorites(s: &Session) -> Vec<FolderKind> {
+    if s.prefs.combined_chosen || !s.prefs.combined_favorites.is_empty() {
+        return s.prefs.combined_favorites.clone();
+    }
+    if combined_folders(&s.mailbox, FolderKind::Inbox).len() >= 2 { vec![FolderKind::Inbox] } else { Vec::new() }
+}
+
 fn favorite_combined(s: &mut Session, v: &Value) -> CmdResult {
     let kind = standard_kind(v.get("kind").unwrap_or(&Value::Null))?;
-    let listed = &mut s.prefs.combined_favorites;
+    // (What was listed by itself is where the owner's own choice starts.)
+    let mut listed = combined_favorites(s);
     let shown = p::bool(v, "value").unwrap_or(!listed.contains(&kind));
     listed.retain(|k| *k != kind);
     if shown {
         listed.push(kind);
     }
     let combined: Vec<&str> = listed.iter().map(|k| k.code()).collect();
+    s.prefs.combined_favorites = listed;
+    s.prefs.combined_chosen = true;
     Ok(json!({"kind": kind.code(), "shown": shown, "combined": combined}))
 }
 

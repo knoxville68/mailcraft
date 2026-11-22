@@ -482,6 +482,9 @@ fn the_pane_lists_outlooks_favorites_in_their_order_under_the_heading() {
     let mut rig = Rig::new();
     rig.look(0.0);
     let (mut harness, _, [account, inbox, sent, projects, receipts]) = window(rig);
+    // (Outlook's own Favorites alone: the owner took All Inboxes away.)
+    harness.state_mut().session.prefs.combined_chosen = true;
+    harness.run_steps(2);
     let at = |h: &egui_kittest::Harness<'static, MailApp>, kind: &str, id: Id| h.state().hit.rect(kind, id);
     let heading = at(&harness, "folderHeading", 0).expect("the Favorites heading");
     let own = at(&harness, "folderHeading", account).expect("the account's heading");

@@ -52,7 +52,7 @@ fn picking_one_folder_leaves_the_combined_list() {
 #[test]
 fn favorite_combined_toggles_and_keeps_order() {
     let (mut s, ..) = two_accounts();
-    s.run("folder.favoriteCombined", &json!({"kind": "inbox"})).unwrap();
+    s.run("folder.favoriteCombined", &json!({"kind": "inbox", "value": true})).unwrap();
     let r = s.run("folder.favoriteCombined", &json!({"kind": "drafts", "value": true})).unwrap();
     assert_eq!(r["combined"], json!(["inbox", "drafts"]));
     let r = s.run("folder.favoriteCombined", &json!({"kind": "inbox"})).unwrap();
@@ -133,4 +133,40 @@ fn the_list_kept_for_one_inbox_is_not_shown_for_all_inboxes() {
     // The same folder stays in view (it is the anchor): the rows must still be built anew.
     s.run("folder.select", &json!({"combined": "inbox"})).unwrap();
     assert!(s.rows().iter().any(|r| r.id == m));
+}
+
+#[test]
+fn all_inboxes_is_listed_by_itself_from_two_accounts_until_the_owner_chooses() {
+    use crate::cmd::folder::combined_favorites;
+    // One account: nothing to combine.
+    let one = Session::at(sample::mailbox(NOW, 0), NOW, 0);
+    assert!(combined_favorites(&one).is_empty());
+    // Two: All Inboxes, without anything chosen.
+    let (mut s, ..) = two_accounts();
+    assert_eq!(combined_favorites(&s), vec![FolderKind::Inbox]);
+    // Taken away, it stays away, and that is kept with the settings.
+    let r = s.run("folder.favoriteCombined", &json!({"kind": "inbox"})).unwrap();
+    assert_eq!(r["shown"], json!(false));
+    assert!(combined_favorites(&s).is_empty());
+    assert!(s.prefs.combined_chosen);
+    let saved = serde_json::to_value(&s.prefs).unwrap();
+    let back: crate::session::Prefs = serde_json::from_value(saved).unwrap();
+    assert!(back.combined_chosen && back.combined_favorites.is_empty());
+    // Another kind added on top of what was listed by itself keeps All Inboxes too.
+    let (mut s, ..) = two_accounts();
+    let r = s.run("folder.favoriteCombined", &json!({"kind": "sent", "value": true})).unwrap();
+    assert_eq!(r["combined"], json!(["inbox", "sent"]));
+}
+
+#[test]
+fn a_message_deleted_in_all_inboxes_comes_back_there_with_undo() {
+    let (mut s, _, b, m) = two_accounts();
+    s.run("folder.select", &json!({"combined": "inbox"})).unwrap();
+    assert!(s.rows().iter().any(|r| r.id == m));
+    s.run("mail.delete", &json!({"id": m})).unwrap();
+    assert!(!s.rows().iter().any(|r| r.id == m));
+    s.run("edit.undo", &json!({})).unwrap();
+    assert_eq!(s.mailbox.message(m).map(|x| x.folder), Some(b), "the message is back in its Inbox");
+    assert_eq!(s.combined(), Some(FolderKind::Inbox), "still All Inboxes");
+    assert!(s.rows().iter().any(|r| r.id == m), "and listed there again");
 }

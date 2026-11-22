@@ -783,7 +783,7 @@ fn folder_row(app: &mut MailApp, ui: &mut Ui, f: &Folder, depth: usize, has_chil
         }
         // Its kind's folder of every account as one entry under Favorites ("All Inboxes").
         if kind != FolderKind::Custom && f_parent_none {
-            let shown = app.session.prefs.combined_favorites.contains(&kind);
+            let shown = mailcraft_engine::cmd::folder::combined_favorites(&app.session).contains(&kind);
             let label = if shown { tl!("Remove All of This Kind from Favorites") } else { tl!("Show All of This Kind in Favorites") };
             if ui.button(label).clicked() {
                 let _ = app.run("folder.favoriteCombined", json!({"kind": kind.code(), "value": !shown}));
@@ -1176,10 +1176,7 @@ pub fn folder_pane(app: &mut MailApp, ui: &mut Ui) {
             let combined_now = app.session.combined();
             let current = if (gmail_now.is_some() && !gmail_tabs) || combined_now.is_some() { 0 } else { app.session.view.folder };
             // The combined entries under Favorites, each with its accounts' folders.
-            let combined: Vec<(FolderKind, Vec<Folder>)> = app
-                .session
-                .prefs
-                .combined_favorites
+            let combined: Vec<(FolderKind, Vec<Folder>)> = mailcraft_engine::cmd::folder::combined_favorites(&app.session)
                 .iter()
                 .map(|k| {
                     let mb = &app.session.mailbox;

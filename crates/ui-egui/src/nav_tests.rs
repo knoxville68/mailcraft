@@ -200,6 +200,8 @@ fn click(harness: &mut egui_kittest::Harness<'static, MailApp>, pos: Pos2) {
 fn two_accounts_inboxes_among_the_favorites_are_told_apart() {
     let mut app = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
     app.autosave = false;
+    // (Without All Inboxes, which would list them under it: the owner took it away.)
+    app.session.prefs.combined_chosen = true;
     let mb = &mut app.session.mailbox;
     let first = mb.inbox().unwrap();
     let work = mb.add_account(mailcraft_model::Account { name: "Work".into(), email: "me@work.example".into(), ..Default::default() });
@@ -239,6 +241,8 @@ fn a_favourite_under_all_inboxes_is_not_listed_twice() {
     for id in [first, second] {
         app.execute("folder.favorite", serde_json::json!({"id": id, "value": true})).unwrap();
     }
+    // (Without All Inboxes to begin with: the owner took it away.)
+    app.session.prefs.combined_chosen = true;
     let shown = |app: &mut MailApp| {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
@@ -706,4 +710,18 @@ fn a_favorite_is_moved_with_its_menu() {
     harness.get_by_label("Move Up").click();
     harness.run_steps(3);
     assert_eq!(last_two(own(&harness)), [alpha, beta]);
+}
+
+/// Favorites' combined entries are written at once (the host does, when this is set), not only
+/// when the window closes.
+#[test]
+fn a_change_to_favorites_combined_entries_asks_to_be_kept_at_once() {
+    let mut a = MailApp::new(Session::at(mailcraft_engine::sample::mailbox(NOW, 0), NOW, 0), Services::default());
+    a.autosave = false;
+    assert!(!a.prefs_changed);
+    a.execute("folder.favoriteCombined", serde_json::json!({"kind": "sent", "value": true})).unwrap();
+    assert!(a.prefs_changed);
+    a.prefs_changed = false;
+    assert!(a.execute("folder.favoriteCombined", serde_json::json!({"kind": "nonsense"})).is_err());
+    assert!(!a.prefs_changed, "a refused change keeps nothing");
 }
