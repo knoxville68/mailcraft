@@ -428,6 +428,11 @@ msgstr "和往常一样，会先在原位置旁边保存整个邮箱的副本。
 msgid "A date"
 msgstr "某个日期"
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/ShareLoad.kt
 #, fuzzy
@@ -517,6 +522,11 @@ msgstr "无法将会议移动到其他邮箱的日历：这会向所有受邀者
 #, fuzzy
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "一次最多将会议转发给 {n} 人。"
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
@@ -644,7 +654,7 @@ msgstr "无法建立与服务器的安全连接。在服务器设置中键入服
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
 msgstr ""
 
 #. what a command says
@@ -11012,7 +11022,7 @@ msgstr "在 Wayland 上，启用此选项后请重启 MailCraft。需要可用�
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
 msgstr ""
 
 #. interface
@@ -11113,7 +11123,7 @@ msgstr "成功后，系统凭据存储会保存它以供下次使用；它不会
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
 msgstr ""
 
 #. what a command says

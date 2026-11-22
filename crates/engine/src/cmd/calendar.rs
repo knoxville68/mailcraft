@@ -106,21 +106,22 @@ fn changing(s: &Session, v: &Value) -> Result<Event, CmdError> {
         // (A calendar server's event is checked for what may change when it is noted.)
         remote::writable_for_new(&s.mailbox, e.calendar)?;
         if remote::dav_addable(&s.mailbox, e.calendar) && !e.origin.id.is_empty() {
-            remote::dav_changeable(&e, &e)?;
+            remote::dav_changeable(&s.mailbox, &e, &e)?;
         }
     }
     Ok(e)
 }
 
 /// The event to delete when it is in a calendar of a calendar server that may be written to (#209
-/// D6): a whole event or series, not one day of it, and not a meeting (its server could send the
-/// cancellations by itself). `None` for any other event, which [`changing`] looks at.
+/// D6): a whole event or series, or one day of a series (which the series then skips), not a day
+/// changed on its own, and not a meeting (its server could send the cancellations by itself).
+/// `None` for any other event, which [`changing`] looks at.
 fn dav_deleting(s: &Session, v: &Value) -> Result<Option<Event>, CmdError> {
     let id = target(s, v)?;
     let Some(e) = s.mailbox.event(id).filter(|e| remote::dav_addable(&s.mailbox, e.calendar)).cloned() else { return Ok(None) };
-    if p::date(v, "occurrence")?.is_some() || !e.origin.series.is_empty() {
+    if !e.origin.series.is_empty() {
         return Err(fail(
-            "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server.",
+            "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server.",
         ));
     }
     if !e.attendees.is_empty() || e.origin.guest {
@@ -553,6 +554,11 @@ fn change_one(s: &mut Session, v: &Value, series: &Event, day: Date, changed: Ev
         return Err(fail("this series has too many changed days"));
     }
     let kept = kept_by(s, series).is_some();
+    if remote::dav_addable(&s.mailbox, series.calendar) {
+        return Err(fail(
+            "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server.",
+        ));
+    }
     if kept && series.origin.id.is_empty() {
         return Err(fail("This series is still on its way to the account's server. Change one of its days once it is there (in a moment)."));
     }
@@ -844,7 +850,10 @@ fn delete(s: &mut Session, v: &Value) -> CmdResult {
         s.mailbox.event_mut(id)?.exceptions.push(day);
         // Its server is to delete (or decline) that occurrence too; a series that isn't there
         // yet arrives without it.
-        if kept && !before.origin.id.is_empty() {
+        // (A calendar server's series skips it: the series is changed there.)
+        if kept && remote::dav_addable(&s.mailbox, before.calendar) {
+            changed(s, &before)?;
+        } else if kept && !before.origin.id.is_empty() {
             let response = if decline { Response::Declined } else { Response::None };
             remote::note_occurrence_gone(s, &before, day, response, send, &note)?;
         }

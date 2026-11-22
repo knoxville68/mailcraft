@@ -428,6 +428,11 @@ msgstr "Najpierw, jak zawsze, obok zapisywana jest kopia całej skrzynki pocztow
 msgid "A date"
 msgstr "Data"
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/ShareLoad.kt
 #, fuzzy
@@ -517,6 +522,11 @@ msgstr "Spotkania nie można przenieść do kalendarza innej skrzynki pocztowej:
 #, fuzzy
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "Spotkanie można jednorazowo przekazać dalej najwyżej {n} osobom."
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
@@ -644,7 +654,7 @@ msgstr "Nie udało się nawiązać bezpiecznego połączenia z serwerem. Wpisz a
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
 msgstr ""
 
 #. what a command says
@@ -11055,7 +11065,7 @@ msgstr "W środowisku Wayland uruchom MailCraft ponownie po włączeniu tej opcj
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
 msgstr ""
 
 #. interface
@@ -11156,7 +11166,7 @@ msgstr "Gdy się powiedzie, magazyn poświadczeń systemu zapamięta je na przys
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
 msgstr ""
 
 #. what a command says

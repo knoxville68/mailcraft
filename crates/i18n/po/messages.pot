@@ -358,6 +358,11 @@ msgstr ""
 msgid "A date"
 msgstr ""
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. android
 #: apps/mailcraft-android/app/src/main/kotlin/work/mailcraft/android/ShareLoad.kt
 msgid "A file"
@@ -431,6 +436,11 @@ msgstr ""
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 msgid "A meeting is forwarded to {n} people at most at once."
+msgstr ""
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
 msgstr ""
 
 #. what a command says
@@ -540,7 +550,7 @@ msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
 msgstr ""
 
 #. what a command says
@@ -9153,7 +9163,7 @@ msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "On a calendar server only an appointment's title, time, location and description can be changed from here yet: change the rest on the server."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
 msgstr ""
 
 #. interface
@@ -9238,7 +9248,7 @@ msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
 msgstr ""
 
 #. what a command says

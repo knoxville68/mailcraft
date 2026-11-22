@@ -897,8 +897,8 @@ fn meetings_and_changes_to_the_servers_events_stay_refused() {
     assert!(meeting.is_err());
     apply(&mut s, id, None, vec![read(vec![change("a.ics", "\"1\"", &event("a", 22, "Vom Server"))], false, true, "t2")]);
     let theirs = s.mailbox.events.values().find(|e| e.title == "Vom Server").unwrap().id;
-    // (Its reminder, which isn't written to the server from here, stays refused.)
-    assert!(s.run("calendar.reminder", &json!({"id": theirs, "minutes": 30})).is_err());
+    // (How it shows, which isn't written to the server from here, stays refused.)
+    assert!(s.run("calendar.showAs", &json!({"id": theirs, "value": "free"})).is_err());
     // A read-only calendar of the server takes nothing new either.
     let mut ro = listing();
     ro.calendars[0].read_only = true;
@@ -964,16 +964,6 @@ fn a_deletion_the_server_kept_is_given_up_and_the_calendar_is_read_whole_again()
     assert!(collection.sync_token.is_empty() && collection.ctag.is_empty(), "read whole, so the event comes back");
 }
 
-#[test]
-fn one_day_of_a_series_or_a_meeting_on_the_server_is_not_deleted_from_here() {
-    let (mut s, id, _) = theirs();
-    let series = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
-    apply(&mut s, id, None, vec![read(vec![change("s.ics", "\"8\"", series)], false, true, "t3")]);
-    let serie = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
-    assert!(s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-24"})).is_err());
-    assert!(deletes(&mut s, id).is_empty());
-}
-
 /// A server event with what MailCraft doesn't read, in a writable calendar, read in with a
 /// mailbox file (so its document is kept): the session, the account, the event and the folder.
 fn theirs_kept(tag: &str) -> (Session, Id, Id, std::path::PathBuf) {
@@ -1035,12 +1025,61 @@ fn a_change_the_server_refused_is_put_back_and_one_changed_there_waits_for_the_r
 }
 
 #[test]
-fn only_title_time_place_and_description_of_a_servers_event_change_from_here() {
-    let (mut s, _, e, dir) = theirs_kept("only");
+fn what_mailcraft_knows_of_a_servers_event_changes_from_here_and_the_rest_is_refused() {
+    let (mut s, id, e, dir) = theirs_kept("only");
     let before = s.mailbox.event(e).unwrap().clone();
-    assert!(s.run("calendar.reminder", &json!({"id": e, "minutes": 30})).is_err());
     assert!(s.run("calendar.showAs", &json!({"id": e, "value": "free"})).is_err());
     assert_eq!(s.mailbox.event(e).unwrap(), &before, "a refused change leaves it as it was");
     assert!(s.run("calendar.move", &json!({"id": e, "start": "2026-11-22T14:00"})).is_ok(), "its time may move");
+    s.run("calendar.reminder", &json!({"id": e, "minutes": 30})).unwrap();
+    s.run("calendar.edit", &json!({"id": e, "categories": ["Arbeit"], "private": true})).unwrap();
+    let up = updates(&mut s, id);
+    let body = &up[0].body;
+    for now in ["TRIGGER:-PT30M", "CATEGORIES:Arbeit", "CLASS:PRIVATE", "X-APPLE-TRAVEL-ADVISORY-BEHAVIOR:AUTOMATIC"] {
+        assert!(body.contains(now), "{now}:\n{body}");
+    }
+    assert!(!body.contains("TRIGGER:-PT15M") && body.matches("BEGIN:VALARM").count() == 1, "the new reminder instead of the old:\n{body}");
     let _ = std::fs::remove_dir_all(dir);
+}
+
+/// A series on the server, read in with its document kept: the session, the account, the series and the folder.
+fn series_kept(tag: &str) -> (Session, Id, Id, std::path::PathBuf) {
+    let dir = std::env::temp_dir().join(format!("mc-dav-series-{tag}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let (mut s, id) = session();
+    s.path = Some(dir.join("mailbox.mailcraft"));
+    let doc = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nX-OTHER:kept\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+    apply(&mut s, id, Some(listing()), vec![read(vec![change("a.ics", "\"8\"", doc)], true, true, "t1")]);
+    let e = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
+    (s, id, e, dir)
+}
+
+#[test]
+fn a_day_of_a_servers_series_is_skipped_by_the_series_there_and_the_whole_series_changes() {
+    let (mut s, id, serie, dir) = series_kept("skip");
+    s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-24"})).unwrap();
+    assert!(deletes(&mut s, id).is_empty(), "the series stays, without that day");
+    let up = updates(&mut s, id);
+    assert_eq!(up.len(), 1);
+    let body = &up[0].body;
+    assert!(body.contains("EXDATE") && body.contains("20261124") && body.contains("RRULE:") && body.contains("X-OTHER:kept"), "{body}");
+    // The whole series may be retitled; one day of it on its own may not be changed yet.
+    s.run("calendar.edit", &json!({"id": serie, "title": "Neue Serie"})).unwrap();
+    assert!(updates(&mut s, id)[0].body.contains("SUMMARY:Neue Serie"));
+    assert!(s.run("calendar.edit", &json!({"id": serie, "scope": "occurrence", "occurrence": "2026-11-25", "title": "Nur heute"})).is_err());
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn a_servers_series_with_a_day_changed_on_its_own_stays_as_the_server_has_it() {
+    let (mut s, id) = session();
+    let doc = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:s\r\nRECURRENCE-ID:20261124T100000Z\r\nDTSTART:20261124T120000Z\r\nDTEND:20261124T130000Z\r\nSUMMARY:Verschoben\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+    apply(&mut s, id, Some(listing()), vec![read(vec![change("a.ics", "\"8\"", doc)], true, true, "t1")]);
+    let serie = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
+    let moved = s.mailbox.events.values().find(|e| e.title == "Verschoben").unwrap().id;
+    assert!(s.run("calendar.edit", &json!({"id": serie, "title": "Anders"})).is_err());
+    assert!(s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-25"})).is_err());
+    assert!(s.run("calendar.delete", &json!({"id": moved})).is_err());
+    assert!(updates(&mut s, id).is_empty() && deletes(&mut s, id).is_empty());
 }
