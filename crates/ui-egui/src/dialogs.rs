@@ -1855,13 +1855,14 @@ pub fn show(app: &mut MailApp, ctx: &egui::Context) {
                     .hint_text("https://calendar.example.org/club.ics")
                     .desired_width(f32::INFINITY);
                 let resp = crate::text_menu::field(ui.add(field));
-                if error.is_empty() {
-                    crate::text_menu::hold(&resp);
-                }
                 ui.add_space(2.0);
                 ui.label(tl!("Name (optional)"));
                 let field = egui::TextEdit::singleline(name).hint_text(tl!("The name the calendar gives itself")).desired_width(f32::INFINITY);
-                crate::text_menu::field(ui.add(field));
+                let named = crate::text_menu::field(ui.add(field));
+                // The address keeps the keyboard, but not from the name, once it is clicked into.
+                if error.is_empty() && !named.has_focus() {
+                    crate::text_menu::hold(&resp);
+                }
                 ui.label(
                     egui::RichText::new(tl!(
                         "An https:// or webcal:// address. Nothing is read until you press Subscribe. The calendar is listed under Other Calendars, read-only, and brought up to date from the web every hour and when you press Send/Receive; you can choose another time in File › Info. Its address is asked for over an encrypted connection, with nothing that says who you are. A private address holds a secret: it is kept like a password, in your system's credential store when you let MailCraft remember sign-ins, and otherwise until you quit."

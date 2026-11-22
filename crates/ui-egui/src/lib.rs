@@ -285,6 +285,8 @@ mod snooze_tell_tests;
 mod snooze_tick;
 pub mod software;
 pub mod spelling;
+#[cfg(test)]
+mod subscribe_dialog_tests;
 mod subscribed;
 #[cfg(test)]
 mod subscribed_tests;
