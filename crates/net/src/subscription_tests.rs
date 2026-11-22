@@ -232,6 +232,20 @@ fn a_redirect_to_plain_http_or_anywhere_unfit_is_refused_and_so_are_too_many() {
     );
 }
 
+/// A `webcal://` address, as it is subscribed to and kept, with its port and its query (a
+/// service's private key), is read over https, the whole query sent along.
+#[test]
+fn a_webcal_address_with_a_port_and_a_key_is_read_over_https() {
+    with_server(
+        |_, _| reply("200 OK", "Content-Type: text/calendar\r\n", CALENDAR),
+        |server, look| {
+            let found = look("webcal://calendar.example:443/f1.ics?key=37f0&sub=8485", "", "", &quick());
+            assert!(matches!(found, Ok(Fetched::Changed { .. })), "{found:?}");
+            assert!(server.request(0).starts_with("GET /f1.ics?key=37f0&sub=8485 HTTP/1.1\r\n"), "{}", server.request(0));
+        },
+    );
+}
+
 #[test]
 fn an_address_that_is_not_https_is_refused_before_anything_is_sent() {
     with_server(
