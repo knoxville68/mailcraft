@@ -1098,6 +1098,7 @@ fn services(
     let unsubscribe_ctx = ctx.clone();
     let subscription_ctx = ctx.clone();
     let dav_ctx = ctx.clone();
+    let dav_find_ctx = ctx.clone();
     let pictures_kept = kept_pictures.clone();
     let (images_ctx, images_kept) = (ctx.clone(), kept_pictures.clone());
     let wipe_pictures = kept_pictures.clone();
@@ -1319,6 +1320,23 @@ fn services(
                     log::warn!("a calendar server's certificate isn't one the system or the owner trusts");
                 }
                 mailcraft_ui_egui::DavDone { download }
+            })
+        })),
+        // Where an account's calendars are, for the Calendar Server form (#209): the search sends
+        // the password only where it allows, and nothing of it is logged.
+        dav_find: Some(Box::new(move |job: mailcraft_ui_egui::DavFindJob| {
+            background(&dav_find_ctx, "calendar server search", move || {
+                use mailcraft_net::dav_find::{Found, Place, find};
+                let place = match job.place {
+                    mailcraft_ui_egui::DavPlace::ICloud => Place::Provider("icloud"),
+                    mailcraft_ui_egui::DavPlace::Fastmail => Place::Provider("fastmail"),
+                    mailcraft_ui_egui::DavPlace::Typed => Place::Typed(&job.server),
+                };
+                let found = match find(&job.email, &job.user, &job.password, place) {
+                    Found::Homes(homes) => Ok(homes),
+                    Found::Failed(why) => Err(why),
+                };
+                mailcraft_ui_egui::DavFindDone { found }
             })
         })),
         // A sender's picture for the message list, once the owner turned that on: from
