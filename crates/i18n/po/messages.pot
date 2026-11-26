@@ -458,6 +458,11 @@ msgstr ""
 msgid "A date"
 msgstr ""
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/forms.rs
 msgid "A desktop alert for the mail this rule acts on as it arrives, while MailCraft isn't the window in front, even when the one for new mail is off in File › Options"
@@ -536,6 +541,11 @@ msgstr ""
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
 msgid "A meeting is forwarded to {n} people at most at once."
+msgstr ""
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
 msgstr ""
 
 #. what a command says
@@ -649,6 +659,11 @@ msgid "A save of the mailbox is still running: try again in a moment"
 msgstr ""
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "A search for a calendar server is already under way."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 msgid "A secure connection to the server couldn't be set up. Type the server's address in Server settings."
 msgstr ""
@@ -660,7 +675,7 @@ msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
 msgstr ""
 
 #. what a command says
@@ -1475,6 +1490,11 @@ msgstr ""
 #. interface
 #: crates/ui-egui/src/import_pst.rs
 msgid "Another mailbox was opened: the import stopped."
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Another server"
 msgstr ""
 
 #. interface, what a command says
@@ -2383,6 +2403,21 @@ msgstr ""
 msgid "Calendar Listed Twice"
 msgstr ""
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Calendar Server"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server (connected)…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server…"
+msgstr ""
+
 #. command label
 #: crates/engine/src/cmd/dav_sync.rs
 msgid "Calendar and Contacts Changes to Send"
@@ -3230,7 +3265,7 @@ msgid "Confirm servers"
 msgstr ""
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/dav_setup.rs
 msgid "Connect"
 msgstr ""
 
@@ -7277,6 +7312,11 @@ msgid "Looking for your Exchange server…"
 msgstr ""
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Looking for your calendars…"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/check_names.rs
 msgid "Looking the names up in the organisation's address list…"
 msgstr ""
@@ -9707,7 +9747,7 @@ msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
 msgstr ""
 
 #. interface
@@ -9802,7 +9842,7 @@ msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
 msgstr ""
 
 #. what a command says
@@ -10473,7 +10513,7 @@ msgid "Part of your mailbox is damaged"
 msgstr ""
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/dav_setup.rs
 msgid "Password"
 msgstr ""
 
@@ -13200,6 +13240,11 @@ msgid "Show the whole original"
 msgstr ""
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/reading/remote.rs
 msgid "Show this message's pictures, this once. Whoever sent it can then tell that you opened it."
 msgstr ""
@@ -15283,6 +15328,11 @@ msgid "The page was closed, or five minutes went by before the sign-in was finis
 msgstr ""
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/calendar_view.rs
 msgid "The paste asks for more, and this route never asks: nothing was moved"
 msgstr ""
@@ -15415,6 +15465,11 @@ msgstr ""
 #. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 msgid "The search for your Exchange server was sent on to {host}, which isn't in your address's own domain."
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The search stopped before it found anything."
 msgstr ""
 
 #. interface
@@ -15586,6 +15641,11 @@ msgstr ""
 #. what a command says
 #: crates/engine/src/cmd/ews_mail.rs crates/engine/src/cmd/jmap_mail.rs
 msgid "The server turned down the sign-in for {name}: sign in again"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The server's address"
 msgstr ""
 
 #. interface
@@ -16815,6 +16875,11 @@ msgid "This task could not be read."
 msgstr ""
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "This version can't look for calendar servers."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/address_book.rs
 msgid "This version of MailCraft can't search an address list"
 msgstr ""
@@ -17487,7 +17552,7 @@ msgid "Use {address}"
 msgstr ""
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/dav_setup.rs
 msgid "User name"
 msgstr ""
 
@@ -17806,6 +17871,11 @@ msgstr ""
 #. interface
 #: crates/ui-egui/src/reading/invitation.rs
 msgid "Where"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Where the calendars of {account} are"
 msgstr ""
 
 #. interface
@@ -18132,6 +18202,11 @@ msgstr ""
 #. interface, what a command says
 #: crates/engine/src/sync_driver/free_busy.rs crates/ui-egui/src/send_receive.rs
 msgid "You're working offline. Turn off Work Offline (Send / Receive) to connect."
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
 msgstr ""
 
 #. interface

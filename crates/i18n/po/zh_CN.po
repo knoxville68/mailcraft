@@ -549,6 +549,11 @@ msgstr "和往常一样，会先在原位置旁边保存整个邮箱的副本。
 msgid "A date"
 msgstr "某个日期"
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/forms.rs
 #, fuzzy
@@ -644,6 +649,11 @@ msgstr "无法将会议移动到其他邮箱的日历：这会向所有受邀者
 #, fuzzy
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "一次最多将会议转发给 {n} 人。"
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
@@ -778,6 +788,11 @@ msgid "A save of the mailbox is still running: try again in a moment"
 msgstr "邮箱保存仍在运行：请稍后再试"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "A search for a calendar server is already under way."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 #, fuzzy
 msgid "A secure connection to the server couldn't be set up. Type the server's address in Server settings."
@@ -791,9 +806,8 @@ msgstr "同时指定了一个系列及其中的某一天；未做任何更改。
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
-msgstr "暂时无法从这里更改日历服务器上的定期系列或会议：请在服务器上更改。"
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -1772,6 +1786,11 @@ msgstr "动画"
 #, fuzzy
 msgid "Another mailbox was opened: the import stopped."
 msgstr "打开了另一个邮箱，导入已停止。"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Another server"
+msgstr ""
 
 #. interface, what a command says
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/meeting_dialogs.rs
@@ -2862,6 +2881,21 @@ msgstr "日历连接检查"
 msgid "Calendar Listed Twice"
 msgstr "日历重复列出"
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Calendar Server"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server (connected)…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server…"
+msgstr ""
+
 #. command label
 #: crates/engine/src/cmd/dav_sync.rs
 #, fuzzy
@@ -3882,7 +3916,7 @@ msgid "Confirm servers"
 msgstr "确认服务器"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Connect"
 msgstr "连接"
@@ -8757,6 +8791,11 @@ msgid "Looking for your Exchange server…"
 msgstr "正在查找您的 Exchange 服务器…"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Looking for your calendars…"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/check_names.rs
 #, fuzzy
 msgid "Looking the names up in the organisation's address list…"
@@ -11689,9 +11728,8 @@ msgstr "在 Wayland 上，启用此选项后请重启 MailCraft。需要可用�
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
-msgstr "在日历服务器上，目前只能从这里更改约会的标题、时间、地点、说明、提醒、类别和私密设置：其余内容请在服务器上更改。"
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs
@@ -11803,9 +11841,8 @@ msgstr "成功后，系统凭据存储会保存它以供下次使用；它不会
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-#, fuzzy
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr "暂时无法从这里删除日历服务器上定期系列中的某一天：请删除整个系列，或在服务器上删除那一天。"
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -12610,7 +12647,7 @@ msgid "Part of your mailbox is damaged"
 msgstr "您的邮箱部分损坏"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Password"
 msgstr "密码"
@@ -15910,6 +15947,11 @@ msgid "Show the whole original"
 msgstr "显示完整原文"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/reading/remote.rs
 #, fuzzy
 msgid "Show this message's pictures, this once. Whoever sent it can then tell that you opened it."
@@ -18407,6 +18449,11 @@ msgid "The page was closed, or five minutes went by before the sign-in was finis
 msgstr "页面已关闭,或在登录完成前已过去五分钟。"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/calendar_view.rs
 #, fuzzy
 msgid "The paste asks for more, and this route never asks: nothing was moved"
@@ -18567,6 +18614,11 @@ msgstr "查找 Exchange 服务器时，需要使用另一域 {host} 中的地址
 #, fuzzy
 msgid "The search for your Exchange server was sent on to {host}, which isn't in your address's own domain."
 msgstr "查找 Exchange 服务器的请求被重定向到 {host}，它不属于您地址所在的域。"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The search stopped before it found anything."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/backstage.rs
@@ -18768,6 +18820,11 @@ msgstr "服务器拒绝了此账户的登录请求。请使用“发送/接收�
 #, fuzzy
 msgid "The server turned down the sign-in for {name}: sign in again"
 msgstr "服务器拒绝了 {name} 的登录请求：请重新登录"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The server's address"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
@@ -20222,6 +20279,11 @@ msgid "This task could not be read."
 msgstr "无法读取此任务。"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "This version can't look for calendar servers."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/address_book.rs
 #, fuzzy
 msgid "This version of MailCraft can't search an address list"
@@ -21042,7 +21104,7 @@ msgid "Use {address}"
 msgstr "使用 {address}"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "User name"
 msgstr "用户名"
@@ -21428,6 +21490,11 @@ msgstr "当{when}时：{then}"
 #, fuzzy
 msgid "Where"
 msgstr "位置"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Where the calendars of {account} are"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/security.rs
@@ -21824,6 +21891,11 @@ msgstr "您已暂定接受此会议。"
 #, fuzzy
 msgid "You're working offline. Turn off Work Offline (Send / Receive) to connect."
 msgstr "您正在离线工作。请在“发送/接收”中关闭“离线工作”以连接。"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/auto_replies.rs
@@ -27671,6 +27743,18 @@ msgstr "−二进制"
 #, fuzzy
 msgid "−Lines"
 msgstr "−行"
+
+#, fuzzy
+#~ msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+#~ msgstr "暂时无法从这里更改日历服务器上的定期系列或会议：请在服务器上更改。"
+
+#, fuzzy
+#~ msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
+#~ msgstr "在日历服务器上，目前只能从这里更改约会的标题、时间、地点、说明、提醒、类别和私密设置：其余内容请在服务器上更改。"
+
+#, fuzzy
+#~ msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+#~ msgstr "暂时无法从这里删除日历服务器上定期系列中的某一天：请删除整个系列，或在服务器上删除那一天。"
 
 #, fuzzy
 #~ msgid "The calendar \"{name}\" is on a calendar server: this version reads it but can't send changes to it yet."

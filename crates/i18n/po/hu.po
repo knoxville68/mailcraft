@@ -552,6 +552,11 @@ msgstr "A MailCraft először biztonsági másolatot ment a teljes postafiók me
 msgid "A date"
 msgstr "Egy dátum"
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/forms.rs
 #, fuzzy
@@ -647,6 +652,11 @@ msgstr "Egy találkozót nem lehet más postafiók naptárába átvinni: ez mind
 #, fuzzy
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "A {n}-embereknek legfeljebb azonnal küldünk egy találkozót."
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
@@ -781,6 +791,11 @@ msgid "A save of the mailbox is still running: try again in a moment"
 msgstr "A postafiók mentése még mindig folyamatban van: próbálja újra egy pillanat alatt"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "A search for a calendar server is already under way."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 #, fuzzy
 msgid "A secure connection to the server couldn't be set up. Type the server's address in Server settings."
@@ -794,9 +809,8 @@ msgstr "Egy sorozat és annak egyik napja is meg van adva; semmi sem változott.
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
-msgstr "A naptárkiszolgálón lévő sorozat vagy megbeszélés innen még nem módosítható: módosítsa a kiszolgálón."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -1777,6 +1791,11 @@ msgstr "Animációk"
 #, fuzzy
 msgid "Another mailbox was opened: the import stopped."
 msgstr "Egy másik postafiókát nyitottak meg: az import leállt."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Another server"
+msgstr ""
 
 #. interface, what a command says
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/meeting_dialogs.rs
@@ -2866,6 +2885,21 @@ msgstr "Naptári kapcsolatellenőrzés"
 msgid "Calendar Listed Twice"
 msgstr "Naptári lista kétszer"
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Calendar Server"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server (connected)…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server…"
+msgstr ""
+
 #. command label
 #: crates/engine/src/cmd/dav_sync.rs
 #, fuzzy
@@ -3884,7 +3918,7 @@ msgid "Confirm servers"
 msgstr "A kiszolgálók megerősítése"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Connect"
 msgstr "Csatlakozás"
@@ -8759,6 +8793,11 @@ msgid "Looking for your Exchange server…"
 msgstr "Keresem a csere szerverét…"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Looking for your calendars…"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/check_names.rs
 #, fuzzy
 msgid "Looking the names up in the organisation's address list…"
@@ -11692,9 +11731,8 @@ msgstr "Wayland alatt a beállítás bekapcsolása után indítsa újra a MailCr
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
-msgstr "A naptárkiszolgálón egyelőre csak a találkozó címe, ideje, helye, leírása, emlékeztetője, kategóriái és bizalmassága módosítható innen: a többit a kiszolgálón módosítsa."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs
@@ -11806,9 +11844,8 @@ msgstr "Ha már működött, a rendszer hiteles boltja legközelebb megtartja."
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-#, fuzzy
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr "A naptárkiszolgálón lévő sorozat egyetlen napja innen még nem törölhető: törölje az egész sorozatot, vagy azt a napot a kiszolgálón."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -12613,7 +12650,7 @@ msgid "Part of your mailbox is damaged"
 msgstr "A postafiókád egy része megsérült."
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Password"
 msgstr "Jelszó"
@@ -15911,6 +15948,11 @@ msgid "Show the whole original"
 msgstr "A teljes eredeti megjelenítése"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/reading/remote.rs
 #, fuzzy
 msgid "Show this message's pictures, this once. Whoever sent it can then tell that you opened it."
@@ -18415,6 +18457,11 @@ msgid "The page was closed, or five minutes went by before the sign-in was finis
 msgstr "Az oldalt bezárták, vagy a bejelentkezés befejezése előtt öt perc telt el."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/calendar_view.rs
 #, fuzzy
 msgid "The paste asks for more, and this route never asks: nothing was moved"
@@ -18575,6 +18622,11 @@ msgstr "A Exchange szerver keresése egy másik domain-en lévő címmel, {host}
 #, fuzzy
 msgid "The search for your Exchange server was sent on to {host}, which isn't in your address's own domain."
 msgstr "Az Exchange-kiszolgáló keresését átirányították ide: {host}. Ez a kiszolgáló az e-mail-címétől eltérő tartományban van."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The search stopped before it found anything."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/backstage.rs
@@ -18779,6 +18831,11 @@ msgstr "A szerver lehalkította a fiók bejelentkezését. A Send/Receive haszn�
 #, fuzzy
 msgid "The server turned down the sign-in for {name}: sign in again"
 msgstr "A szerver lehalkította a {name} bejelentkezését: jelentkezzen be újra"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The server's address"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
@@ -20246,6 +20303,11 @@ msgid "This task could not be read."
 msgstr "Ezt a feladatot nem sikerült beolvasni."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "This version can't look for calendar servers."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/address_book.rs
 #, fuzzy
 msgid "This version of MailCraft can't search an address list"
@@ -21068,7 +21130,7 @@ msgid "Use {address}"
 msgstr "{address} használata"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "User name"
 msgstr "Felhasználónév"
@@ -21452,6 +21514,11 @@ msgstr "Ha {when}: {then}"
 #, fuzzy
 msgid "Where"
 msgstr "Ahol"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Where the calendars of {account} are"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/security.rs
@@ -21844,6 +21911,11 @@ msgstr "Feltételesen elfogadta ezt az értekezletet."
 #, fuzzy
 msgid "You're working offline. Turn off Work Offline (Send / Receive) to connect."
 msgstr "Kapcsold ki a munka offline (Küld / Fogadja) kapcsolódni."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/auto_replies.rs
@@ -27827,6 +27899,18 @@ msgstr "−Bin"
 #, fuzzy
 msgid "−Lines"
 msgstr "−Sorok"
+
+#, fuzzy
+#~ msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+#~ msgstr "A naptárkiszolgálón lévő sorozat vagy megbeszélés innen még nem módosítható: módosítsa a kiszolgálón."
+
+#, fuzzy
+#~ msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
+#~ msgstr "A naptárkiszolgálón egyelőre csak a találkozó címe, ideje, helye, leírása, emlékeztetője, kategóriái és bizalmassága módosítható innen: a többit a kiszolgálón módosítsa."
+
+#, fuzzy
+#~ msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+#~ msgstr "A naptárkiszolgálón lévő sorozat egyetlen napja innen még nem törölhető: törölje az egész sorozatot, vagy azt a napot a kiszolgálón."
 
 #, fuzzy
 #~ msgid "The calendar \"{name}\" is on a calendar server: this version reads it but can't send changes to it yet."

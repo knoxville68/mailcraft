@@ -548,6 +548,11 @@ msgstr "Nejprve se vedle ní jako vždy uloží kopie celé poštovní schránky
 msgid "A date"
 msgstr "Datum"
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/forms.rs
 #, fuzzy
@@ -643,6 +648,11 @@ msgstr "Schůzku nelze přesunout do kalendáře jiné poštovní schránky: vš
 #, fuzzy
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "Schůzka se najednou přeposílá nejvýše {n} lidem."
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
@@ -777,6 +787,11 @@ msgid "A save of the mailbox is still running: try again in a moment"
 msgstr "Ukládání poštovní schránky stále probíhá: zkuste to za chvíli znovu"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "A search for a calendar server is already under way."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 #, fuzzy
 msgid "A secure connection to the server couldn't be set up. Type the server's address in Server settings."
@@ -790,9 +805,8 @@ msgstr "Je uvedena řada i jeden z jejích dnů; nic se nezměnilo."
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
-msgstr "Opakovanou událost nebo poradu na kalendářovém serveru zatím odsud nelze změnit: změňte ji na serveru."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -1769,6 +1783,11 @@ msgstr "Animace"
 #, fuzzy
 msgid "Another mailbox was opened: the import stopped."
 msgstr "Byla otevřena jiná poštovní schránka: import se zastavil."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Another server"
+msgstr ""
 
 #. interface, what a command says
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/meeting_dialogs.rs
@@ -2861,6 +2880,21 @@ msgstr "Kontrola připojení kalendáře"
 msgid "Calendar Listed Twice"
 msgstr "Kalendář uveden dvakrát"
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Calendar Server"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server (connected)…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server…"
+msgstr ""
+
 #. command label
 #: crates/engine/src/cmd/dav_sync.rs
 #, fuzzy
@@ -3881,7 +3915,7 @@ msgid "Confirm servers"
 msgstr "Potvrdit servery"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Connect"
 msgstr "Připojit"
@@ -8783,6 +8817,11 @@ msgid "Looking for your Exchange server…"
 msgstr "Hledám váš server Exchange…"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Looking for your calendars…"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/check_names.rs
 msgid "Looking the names up in the organisation's address list…"
 msgstr ""
@@ -11717,9 +11756,8 @@ msgstr "Ve Waylandu po zapnutí této možnosti MailCraft restartujte. Je nutný
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
-msgstr "Na kalendářovém serveru lze odsud zatím měnit jen název, čas, místo, popis, připomenutí, kategorie a soukromí schůzky: zbytek změňte na serveru."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs
@@ -11831,9 +11869,8 @@ msgstr "Jakmile to bude fungovat, úložiště přihlašovacích údajů systém
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-#, fuzzy
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr "Jeden den opakované události na kalendářovém serveru zatím odsud nelze smazat: smažte celou řadu, nebo ten den na serveru."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -12636,7 +12673,7 @@ msgid "Part of your mailbox is damaged"
 msgstr "Část vaší poštovní schránky je poškozená"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Password"
 msgstr "Heslo"
@@ -15943,6 +15980,11 @@ msgid "Show the whole original"
 msgstr "Zobrazit celý originál"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/reading/remote.rs
 #, fuzzy
 msgid "Show this message's pictures, this once. Whoever sent it can then tell that you opened it."
@@ -18450,6 +18492,11 @@ msgid "The page was closed, or five minutes went by before the sign-in was finis
 msgstr "Stránka byla zavřena, nebo uplynulo pět minut, než bylo přihlášení dokončeno."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/calendar_view.rs
 #, fuzzy
 msgid "The paste asks for more, and this route never asks: nothing was moved"
@@ -18610,6 +18657,11 @@ msgstr "Hledání vašeho serveru Exchange žádá začít znovu s adresou v jin
 #, fuzzy
 msgid "The search for your Exchange server was sent on to {host}, which isn't in your address's own domain."
 msgstr "Hledání vašeho serveru Exchange bylo předáno na {host}, který není ve vlastní doméně vaší adresy."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The search stopped before it found anything."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/backstage.rs
@@ -18817,6 +18869,11 @@ msgstr "Server odmítl přihlášení tohoto účtu. Znovu se přihlaste pomocí
 #, fuzzy
 msgid "The server turned down the sign-in for {name}: sign in again"
 msgstr "Server odmítl přihlášení účtu {name}: přihlaste se znovu"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The server's address"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
@@ -20297,6 +20354,11 @@ msgid "This task could not be read."
 msgstr "Tento úkol se nepodařilo přečíst."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "This version can't look for calendar servers."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/address_book.rs
 msgid "This version of MailCraft can't search an address list"
 msgstr ""
@@ -21123,7 +21185,7 @@ msgid "Use {address}"
 msgstr "Použít {address}"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "User name"
 msgstr "Uživatelské jméno"
@@ -21509,6 +21571,11 @@ msgstr "Když {when}: {then}"
 #, fuzzy
 msgid "Where"
 msgstr "Kde"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Where the calendars of {account} are"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/security.rs
@@ -21904,6 +21971,11 @@ msgstr "Tuto schůzku jste předběžně přijali."
 #, fuzzy
 msgid "You're working offline. Turn off Work Offline (Send / Receive) to connect."
 msgstr "Pracujete offline. Chcete-li se připojit, vypněte Pracovat offline (Odeslat / přijmout)."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/auto_replies.rs
@@ -28019,6 +28091,18 @@ msgstr "−Binární"
 #, fuzzy
 msgid "−Lines"
 msgstr "−Řádky"
+
+#, fuzzy
+#~ msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+#~ msgstr "Opakovanou událost nebo poradu na kalendářovém serveru zatím odsud nelze změnit: změňte ji na serveru."
+
+#, fuzzy
+#~ msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
+#~ msgstr "Na kalendářovém serveru lze odsud zatím měnit jen název, čas, místo, popis, připomenutí, kategorie a soukromí schůzky: zbytek změňte na serveru."
+
+#, fuzzy
+#~ msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+#~ msgstr "Jeden den opakované události na kalendářovém serveru zatím odsud nelze smazat: smažte celou řadu, nebo ten den na serveru."
 
 #, fuzzy
 #~ msgid "The calendar \"{name}\" is on a calendar server: this version reads it but can't send changes to it yet."

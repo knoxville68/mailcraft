@@ -549,6 +549,11 @@ msgstr "Primero se guarda junto a él una copia de todo su buzón, como siempre.
 msgid "A date"
 msgstr "Una fecha"
 
+#. what a command says
+#: crates/engine/src/cmd/calendar.rs
+msgid "A day of a series on a calendar server that was changed on its own can't be deleted from here yet: delete the whole series, or that day on the server."
+msgstr ""
+
 #. interface
 #: crates/ui-egui/src/forms.rs
 #, fuzzy
@@ -643,6 +648,11 @@ msgstr "Una reunión no se puede mover al calendario de otro buzón: se enviarí
 #, fuzzy
 msgid "A meeting is forwarded to {n} people at most at once."
 msgstr "Una reunión se reenvía como máximo a {n} personas a la vez."
+
+#. what a command says
+#: crates/engine/src/cmd/remote.rs
+msgid "A meeting on a calendar server can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
@@ -777,6 +787,11 @@ msgid "A save of the mailbox is still running: try again in a moment"
 msgstr "Todavía se está guardando el buzón: vuelva a intentarlo en un momento"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "A search for a calendar server is already under way."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
 #, fuzzy
 msgid "A secure connection to the server couldn't be set up. Type the server's address in Server settings."
@@ -790,9 +805,8 @@ msgstr "Se nombran a la vez una serie y uno de sus días; no se ha cambiado nada
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
-msgstr "Una serie o una reunión en un servidor de calendarios todavía no se puede cambiar desde aquí: cámbiela en el servidor."
+msgid "A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -1775,6 +1789,11 @@ msgstr "Animaciones"
 #, fuzzy
 msgid "Another mailbox was opened: the import stopped."
 msgstr "Se abrió otro buzón: la importación se detuvo."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Another server"
+msgstr ""
 
 #. interface, what a command says
 #: crates/engine/src/cmd/calendar.rs crates/ui-egui/src/meeting_dialogs.rs
@@ -2865,6 +2884,21 @@ msgstr "Comprobación de la conexión del calendario"
 msgid "Calendar Listed Twice"
 msgstr "Calendario listado dos veces"
 
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Calendar Server"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server (connected)…"
+msgstr ""
+
+#. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Calendar Server…"
+msgstr ""
+
 #. command label
 #: crates/engine/src/cmd/dav_sync.rs
 #, fuzzy
@@ -3883,7 +3917,7 @@ msgid "Confirm servers"
 msgstr "Confirmar servidores"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/calendar_view.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Connect"
 msgstr "Conectar"
@@ -8764,6 +8798,11 @@ msgid "Looking for your Exchange server…"
 msgstr "Buscando su servidor Exchange…"
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Looking for your calendars…"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/check_names.rs
 #, fuzzy
 msgid "Looking the names up in the organisation's address list…"
@@ -11700,9 +11739,8 @@ msgstr "En Wayland, reinicie MailCraft tras activar esta opción. Se requieren u
 
 #. what a command says
 #: crates/engine/src/cmd/remote.rs
-#, fuzzy
-msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
-msgstr "En un servidor de calendarios, por ahora solo se pueden cambiar desde aquí el título, la hora, el lugar, la descripción, el aviso, las categorías y la privacidad de una cita: cambie el resto en el servidor."
+msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/forms.rs
@@ -11814,9 +11852,8 @@ msgstr "Cuando haya funcionado, el almacén de credenciales de su sistema la gua
 
 #. what a command says
 #: crates/engine/src/cmd/calendar.rs
-#, fuzzy
-msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
-msgstr "Un día de una serie en un servidor de calendarios todavía no se puede eliminar desde aquí: elimine toda la serie, o ese día en el servidor."
+msgid "One day of a series on a calendar server can't be changed on its own from here yet: change the whole series, or that day on the server."
+msgstr ""
 
 #. what a command says
 #: crates/engine/src/cmd/calendar/meeting.rs
@@ -12621,7 +12658,7 @@ msgid "Part of your mailbox is damaged"
 msgstr "Parte de su buzón está dañada"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "Password"
 msgstr "Contraseña"
@@ -15922,6 +15959,11 @@ msgid "Show the whole original"
 msgstr "Mostrar todo el original"
 
 #. interface
+#: crates/ui-egui/src/backstage.rs
+msgid "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/reading/remote.rs
 #, fuzzy
 msgid "Show this message's pictures, this once. Whoever sent it can then tell that you opened it."
@@ -18422,6 +18464,11 @@ msgid "The page was closed, or five minutes went by before the sign-in was finis
 msgstr "Se cerró la página, o pasaron cinco minutos antes de terminar el inicio de sesión."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The password goes only to that server, over an encrypted connection. New appointments can be added here; other changes are made on the server."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/calendar_view.rs
 #, fuzzy
 msgid "The paste asks for more, and this route never asks: nothing was moved"
@@ -18581,6 +18628,11 @@ msgstr "La búsqueda de su servidor Exchange pide empezar de nuevo con una direc
 #, fuzzy
 msgid "The search for your Exchange server was sent on to {host}, which isn't in your address's own domain."
 msgstr "La búsqueda de su servidor Exchange se redirigió a {host}, que no está en el dominio de su dirección."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The search stopped before it found anything."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/backstage.rs
@@ -18785,6 +18837,11 @@ msgstr "El servidor rechazó el inicio de sesión de esta cuenta. Use Enviar y r
 #, fuzzy
 msgid "The server turned down the sign-in for {name}: sign in again"
 msgstr "El servidor rechazó el inicio de sesión de {name}: inicie sesión de nuevo"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "The server's address"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/account_setup/exchange.rs
@@ -20252,6 +20309,11 @@ msgid "This task could not be read."
 msgstr "No se pudo leer esta tarea."
 
 #. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "This version can't look for calendar servers."
+msgstr ""
+
+#. interface
 #: crates/ui-egui/src/address_book.rs
 #, fuzzy
 msgid "This version of MailCraft can't search an address list"
@@ -21072,7 +21134,7 @@ msgid "Use {address}"
 msgstr "Usar {address}"
 
 #. interface
-#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs
+#: crates/ui-egui/src/account_setup.rs crates/ui-egui/src/account_setup/exchange.rs crates/ui-egui/src/dav_setup.rs
 #, fuzzy
 msgid "User name"
 msgstr "Nombre de usuario"
@@ -21455,6 +21517,11 @@ msgstr "Cuando {when}: {then}"
 #, fuzzy
 msgid "Where"
 msgstr "Dónde"
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Where the calendars of {account} are"
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/security.rs
@@ -21851,6 +21918,11 @@ msgstr "Ha aceptado provisionalmente esta reunión."
 #, fuzzy
 msgid "You're working offline. Turn off Work Offline (Send / Receive) to connect."
 msgstr "Está trabajando sin conexión. Desactive Trabajar sin conexión (Enviar y recibir) para conectarse."
+
+#. interface
+#: crates/ui-egui/src/dav_setup.rs
+msgid "Your Apple ID and an app-specific password, which you make at account.apple.com under Sign-In and Security. New appointments can be added here; other changes are made in iCloud."
+msgstr ""
 
 #. interface
 #: crates/ui-egui/src/auto_replies.rs
@@ -27828,6 +27900,18 @@ msgstr "−Bin"
 #, fuzzy
 msgid "−Lines"
 msgstr "−Líneas"
+
+#, fuzzy
+#~ msgid "A series or a meeting on a calendar server can't be changed from here yet: change it on the server."
+#~ msgstr "Una serie o una reunión en un servidor de calendarios todavía no se puede cambiar desde aquí: cámbiela en el servidor."
+
+#, fuzzy
+#~ msgid "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server."
+#~ msgstr "En un servidor de calendarios, por ahora solo se pueden cambiar desde aquí el título, la hora, el lugar, la descripción, el aviso, las categorías y la privacidad de una cita: cambie el resto en el servidor."
+
+#, fuzzy
+#~ msgid "One day of a series on a calendar server can't be deleted from here yet: delete the whole series, or that day on the server."
+#~ msgstr "Un día de una serie en un servidor de calendarios todavía no se puede eliminar desde aquí: elimine toda la serie, o ese día en el servidor."
 
 #, fuzzy
 #~ msgid "The calendar \"{name}\" is on a calendar server: this version reads it but can't send changes to it yet."
