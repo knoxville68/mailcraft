@@ -1142,18 +1142,6 @@ fn a_deletion_the_server_kept_is_given_up_and_the_calendar_is_read_whole_again()
     assert!(collection.sync_token.is_empty() && collection.ctag.is_empty(), "read whole, so the event comes back");
 }
 
-#[test]
-fn one_day_of_a_series_or_a_meeting_on_the_server_is_not_deleted_from_here() {
-    let (mut s, id, _) = theirs();
-    let series = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
-    apply(&mut s, id, None, vec![read(vec![change("s.ics", "\"8\"", series)], false, true, "t3")]);
-    let serie = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
-    assert!(s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-24"})).is_err());
-    assert!(deletes(&mut s, id).is_empty());
-    // Nor is the series changed from here yet.
-    assert!(s.run("calendar.edit", &json!({"id": serie, "title": "Anders"})).is_err());
-}
-
 /// A server event with what MailCraft doesn't read, in a writable calendar, read in with a
 /// mailbox file (so its document is kept): the session, the account, the event and the folder.
 fn theirs_kept(tag: &str) -> (Session, Id, Id, std::path::PathBuf) {
@@ -1370,6 +1358,35 @@ fn a_change_made_while_the_last_one_was_on_its_way_goes_up_after_it() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
+/// A series on the server, read in with its document kept: the session, the account, the series and the folder.
+fn series_kept(tag: &str) -> (Session, Id, Id, std::path::PathBuf) {
+    let dir = std::env::temp_dir().join(format!("mc-dav-series-{tag}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let (mut s, id) = session();
+    s.path = Some(dir.join("mailbox.mailcraft"));
+    let doc = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nX-OTHER:kept\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+    apply(&mut s, id, Some(listing()), vec![read(vec![change("a.ics", "\"8\"", doc)], true, true, "t1")]);
+    let e = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
+    (s, id, e, dir)
+}
+
+#[test]
+fn a_day_of_a_servers_series_is_skipped_by_the_series_there_and_the_whole_series_changes() {
+    let (mut s, id, serie, dir) = series_kept("skip");
+    s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-24"})).unwrap();
+    assert!(deletes(&mut s, id).is_empty(), "the series stays, without that day");
+    let up = updates(&mut s, id);
+    assert_eq!(up.len(), 1);
+    let body = &up[0].body;
+    assert!(body.contains("EXDATE") && body.contains("20261124") && body.contains("RRULE:") && body.contains("X-OTHER:kept"), "{body}");
+    // The whole series may be retitled; one day of it on its own may not be changed yet.
+    s.run("calendar.edit", &json!({"id": serie, "title": "Neue Serie"})).unwrap();
+    assert!(updates(&mut s, id)[0].body.contains("SUMMARY:Neue Serie"));
+    assert!(s.run("calendar.edit", &json!({"id": serie, "scope": "occurrence", "occurrence": "2026-11-25", "title": "Nur heute"})).is_err());
+    let _ = std::fs::remove_dir_all(dir);
+}
+
 #[test]
 fn an_appointment_deleted_before_the_server_document_was_read_is_deleted_there_once_it_is() {
     let (mut s, id, _, event) = made();
@@ -1404,4 +1421,38 @@ fn what_waits_without_an_etag_for_a_document_the_server_changed_is_given_up_and_
         assert_eq!(titles(&s), vec!["Am Telefon"], "{what}: the server's is shown");
         assert!(said.to_string().contains("Zahnarzt") || said.to_string().contains("Meins"), "{what}: the owner is told: {said}");
     }
+}
+
+#[test]
+fn a_servers_series_with_a_day_changed_on_its_own_stays_as_the_server_has_it() {
+    let (mut s, id) = session();
+    let doc = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:s\r\nDTSTART:20261123T100000Z\r\nDTEND:20261123T110000Z\r\nRRULE:FREQ=DAILY;COUNT=5\r\nSUMMARY:Serie\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:s\r\nRECURRENCE-ID:20261124T100000Z\r\nDTSTART:20261124T120000Z\r\nDTEND:20261124T130000Z\r\nSUMMARY:Verschoben\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+    apply(&mut s, id, Some(listing()), vec![read(vec![change("a.ics", "\"8\"", doc)], true, true, "t1")]);
+    let serie = s.mailbox.events.values().find(|e| e.title == "Serie").unwrap().id;
+    let moved = s.mailbox.events.values().find(|e| e.title == "Verschoben").unwrap().id;
+    assert!(s.run("calendar.edit", &json!({"id": serie, "title": "Anders"})).is_err());
+    assert!(s.run("calendar.delete", &json!({"id": serie, "occurrence": "2026-11-25"})).is_err());
+    assert!(s.run("calendar.delete", &json!({"id": moved})).is_err());
+    assert!(updates(&mut s, id).is_empty() && deletes(&mut s, id).is_empty());
+}
+
+#[test]
+fn a_series_change_waiting_without_an_etag_isnt_put_over_a_day_the_server_skipped_since() {
+    let (mut s, id, serie, dir) = series_kept("skipped-there");
+    s.run("calendar.edit", &json!({"id": serie, "title": "Neue Serie"})).unwrap();
+    let sent = updates(&mut s, id);
+    update_answer_at(&mut s, id, "a.ics", mailcraft_model::DavPutOver::Done);
+    // Changed again before the read; meanwhile the server skips a day of it.
+    s.run("calendar.edit", &json!({"id": serie, "title": "Noch neuer"})).unwrap();
+    let theirs = sent[0].body.replace("RRULE:", "EXDATE:20261125T100000Z\r\nRRULE:");
+    apply(&mut s, id, None, vec![read(vec![change("a.ics", "\"9\"", &theirs)], false, true, "t2")]);
+    assert!(updates(&mut s, id).is_empty(), "not put over what changed there");
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+fn update_answer_at(s: &mut Session, id: Id, name: &str, outcome: mailcraft_model::DavPutOver) -> Value {
+    let server = server_of(s, id);
+    let updated = vec![mailcraft_model::DavUpdated { href: format!("{COLLECTION}{name}"), outcome }];
+    let download = DavDownload { account: id, email: "ada@example.org".into(), server, updated, ..Default::default() };
+    s.run("sync.applyDav", &json!({"result": download})).unwrap()
 }

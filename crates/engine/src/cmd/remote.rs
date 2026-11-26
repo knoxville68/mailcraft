@@ -923,12 +923,17 @@ pub fn dav_addable(mailbox: &Mailbox, calendar: Id) -> bool {
 }
 
 /// Whether a calendar server's event may become `after` from here (#209 D6): what MailCraft
-/// knows of it (title, time, place, description, reminder, categories, private), written into the
-/// document the server sent, which keeps everything else as it was; not a series, nor a meeting
-/// (the server could send updates by itself), nor a move to another calendar.
-pub(crate) fn dav_changeable(before: &Event, after: &Event) -> Result<(), CmdError> {
-    if before.recurrence.is_some() || !before.origin.series.is_empty() || !before.attendees.is_empty() || before.origin.guest {
-        return Err(fail("A series or a meeting on a calendar server can't be changed from here yet: change it on the server."));
+/// knows of it (title, time, place, description, reminder, categories, private, the rule of a
+/// series and the days it skips), written into the document the server sent, which keeps
+/// everything else as it was; not a meeting (the server could send updates by itself), not one
+/// day of a series on its own, nor a series with such days (its document has more than one
+/// event), nor a move to another calendar.
+pub(crate) fn dav_changeable(mailbox: &Mailbox, before: &Event, after: &Event) -> Result<(), CmdError> {
+    if !before.attendees.is_empty() || before.origin.guest {
+        return Err(fail("A meeting on a calendar server can't be changed from here yet: change it on the server."));
+    }
+    if !before.origin.series.is_empty() || dav_has_changed_days(mailbox, before) {
+        return Err(fail("A series on a calendar server with days changed on their own can't be changed from here yet: change it on the server."));
     }
     let mut same = after.clone();
     (same.title, same.location, same.description) = (before.title.clone(), before.location.clone(), before.description.clone());
@@ -936,12 +941,18 @@ pub(crate) fn dav_changeable(before: &Event, after: &Event) -> Result<(), CmdErr
     (same.start_zone, same.end_zone) = (before.start_zone.clone(), before.end_zone.clone());
     (same.start_repeated, same.end_repeated) = (before.start_repeated, before.end_repeated);
     (same.reminder_minutes, same.categories, same.private) = (before.reminder_minutes, before.categories.clone(), before.private);
+    (same.recurrence, same.exceptions) = (before.recurrence.clone(), before.exceptions.clone());
     if same != *before {
         return Err(fail(
-            "On a calendar server only an appointment's title, time, location, description, reminder, categories and privacy can be changed from here yet: change the rest on the server.",
+            "On a calendar server only an appointment's title, time, location, description, reminder, categories, privacy and repetition can be changed from here yet: change the rest on the server.",
         ));
     }
     Ok(())
+}
+
+/// Whether a calendar server's series has days changed on their own (events of their own here).
+pub(crate) fn dav_has_changed_days(mailbox: &Mailbox, series: &Event) -> bool {
+    !series.origin.id.is_empty() && mailbox.events.values().any(|e| e.origin.series == series.origin.id && e.origin.account == series.origin.account)
 }
 
 /// [`writable`] for an event about to be made in `calendar`: also a CalDAV calendar new events
@@ -984,17 +995,16 @@ pub(crate) fn note_changed(mailbox: &mut Mailbox, before: &Event, offset_at: &dy
     if now.origin.id.is_empty() {
         return Ok(());
     }
-    if dav_addable(mailbox, before.calendar) {
-        dav_changeable(before, &now)?;
+    let dav = dav_addable(mailbox, before.calendar);
+    if dav {
+        dav_changeable(mailbox, before, &now)?;
     }
+    // (A calendar server is sent the whole series, the days it skips too.)
+    let differs = |base: &Event| !changed_fields(base, &now, offset_at).is_empty() || (dav && base.exceptions != now.exceptions);
     let waiting = |change: &EventChange| change.kind == EventChangeKind::Update && change.account == account && change.remote == now.origin.id;
     match mailbox.event_changes.iter().position(waiting) {
         Some(at) => {
-            let back = mailbox
-                .event_changes
-                .get(at)
-                .and_then(|change| change.base.as_deref())
-                .is_some_and(|base| changed_fields(base, &now, offset_at).is_empty());
+            let back = mailbox.event_changes.get(at).and_then(|change| change.base.as_deref()).is_some_and(|base| !differs(base));
             if back {
                 mailbox.event_changes.remove(at);
             } else if let Some(change) = mailbox.event_changes.get_mut(at) {
@@ -1003,7 +1013,7 @@ pub(crate) fn note_changed(mailbox: &mut Mailbox, before: &Event, offset_at: &dy
                 change.retry_at = 0;
             }
         }
-        None if changed_fields(before, &now, offset_at).is_empty() => {}
+        None if !differs(before) => {}
         None => {
             room_for_change(mailbox)?;
             mailbox.event_changes.push(EventChange {

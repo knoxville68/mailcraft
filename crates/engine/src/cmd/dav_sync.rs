@@ -221,6 +221,11 @@ fn also_changed(base: &Event, now: &Event) -> Vec<&'static str> {
     if base.reminder_minutes != now.reminder_minutes {
         out.push("VALARM");
     }
+    // A rule counts from the start, in its zone: a series moved is written with its rule anew.
+    let retimed = (base.start, base.all_day, &base.start_zone) != (now.start, now.all_day, &now.start_zone);
+    if base.recurrence != now.recurrence || (now.recurrence.is_some() && (base.exceptions != now.exceptions || retimed)) {
+        out.extend(["RRULE", "EXDATE"]);
+    }
     out
 }
 
@@ -275,7 +280,7 @@ fn take_updated(s: &mut Session, account: Id, updated: &[DavUpdated], offset_at:
 fn changed_while_out(s: &mut Session, account: Id, id: Id, origin: Origin, offset_at: &dyn Fn(i64) -> i32) {
     let Some(mut sent) = s.dav_sent.remove(&id) else { return };
     let Some(now) = s.mailbox.event(id) else { return };
-    if super::remote::changed_fields(&sent, now, offset_at).is_empty() {
+    if same_event(&sent, now, offset_at) {
         return;
     }
     sent.origin = origin;
@@ -291,6 +296,17 @@ fn changed_while_out(s: &mut Session, account: Id, id: Id, origin: Origin, offse
     });
 }
 
+/// Whether two versions of a calendar server's event say the same as far as MailCraft writes it
+/// there: the fields a change sends, and the days a series skips.
+fn same_event(a: &Event, b: &Event, offset_at: &dyn Fn(i64) -> i32) -> bool {
+    let skipped = |e: &Event| {
+        let mut days = e.exceptions.clone();
+        days.sort();
+        days
+    };
+    super::remote::changed_fields(a, b, offset_at).is_empty() && skipped(a) == skipped(b)
+}
+
 /// A change made here waits for the event `id`, and the server's version `theirs` came. It is what
 /// the change was made on: the change goes up with the ETag it came with (one made before the
 /// server's document was first read, or after a change of the same event was taken, had none, or
@@ -304,7 +320,7 @@ fn settle_update(s: &mut Session, account: Id, id: Id, theirs: &Event, offset_at
     if base.origin.change_key == theirs.origin.change_key {
         return false;
     }
-    if super::remote::changed_fields(base, theirs, offset_at).is_empty() {
+    if same_event(base, theirs, offset_at) {
         base.origin.change_key = theirs.origin.change_key.clone();
         return false;
     }
@@ -338,7 +354,7 @@ fn settle_delete(
     let Some(c) = s.mailbox.event_changes.get_mut(at) else { return false };
     let remote = c.remote.clone();
     let Some(base) = c.base.as_deref_mut().filter(|b| b.origin.change_key.is_empty()) else { return false };
-    let same = fresh.iter().find(|(key, _)| *key == remote).is_some_and(|(_, e)| super::remote::changed_fields(base, e, offset_at).is_empty());
+    let same = fresh.iter().find(|(key, _)| *key == remote).is_some_and(|(_, e)| same_event(base, e, offset_at));
     if same && !change.etag.is_empty() {
         base.origin.change_key = change.etag.clone();
         return false;
