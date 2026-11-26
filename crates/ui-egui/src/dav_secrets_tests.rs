@@ -334,3 +334,25 @@ fn a_write_can_ask_whether_a_forget_is_pending_for_its_name() {
     settle(&mut a);
     assert!(!a.dav_forget_pending(&key) && !a.dav_forget_pending(busy), "completed");
 }
+
+/// A calendar server's password the owner let MailCraft remember is read back at the next start,
+/// with the mail passwords: the server's jobs find it without asking again.
+#[test]
+fn a_remembered_password_is_read_back_at_the_next_start() {
+    let (mut a, id, _) = with_store(false);
+    let key = MailApp::dav_secret_key(a.session.mailbox.account(id).unwrap(), A).unwrap();
+    // (A new start: nothing in memory but what the store gives.)
+    a.secret_cache.clear();
+    a.dav_passwords.clear();
+    assert!(a.dav_password(id, A).is_none());
+    a.start_secret_read(false);
+    for _ in 0..500 {
+        a.poll_secret_read();
+        if a.secret_read.is_none() {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert_eq!(a.secret_cache.get(&key).map(String::as_str), Some("one"));
+    assert_eq!(a.dav_password(id, A).as_deref(), Some("one"));
+}

@@ -103,6 +103,8 @@ impl MailApp {
             .filter_map(|c| c.subscription.as_ref().map(|sub| (c.id, sub)))
             .take(mailcraft_model::subscription::MAX_SUBSCRIBED);
         asks.extend(subscribed.map(|(id, sub)| Ask { key: sub.secret_name(id), old: None }));
+        // The passwords of calendar servers (#209) that were remembered: their jobs find them here.
+        asks.extend(self.session.mailbox.accounts.iter().flat_map(Self::dav_secret_keys).map(|key| Ask { key, old: None }));
         let (send, receive) = mpsc::channel();
         let job = std::thread::Builder::new().name("secret-read".into()).spawn(move || {
             let _ = send.send(read(&*store, asks, migrate));

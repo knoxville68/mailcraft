@@ -66,7 +66,15 @@ pub fn find_with<E: HttpExchange>(exchange: &E, email: &str, user: &str, passwor
     let Ok(mut search) = Discovery::new(&searched, secret, true, false) else {
         return Found::Failed("That is not an e-mail address a server can be looked for from; type the server's address instead.".into());
     };
-    if let Place::Typed(url) = place {
+    // The provider the owner picked is asked at its own address as if they had typed it: its
+    // server (iCloud's) asks for the password without saying first that it keeps calendars, which
+    // only a server the owner named may do.
+    let typed = match place {
+        Place::Provider(_) => mailcraft_model::provider::dav_by_domain(searched.rsplit('@').next().unwrap_or_default()).map(|p| p.caldav),
+        Place::Typed(url) => Some(url),
+        Place::Address => None,
+    };
+    if let Some(url) = typed {
         search = match search.typed(Kind::Calendar, url) {
             Ok(search) => search,
             Err(_) => return Found::Failed("That isn't the https:// address of a server.".into()),

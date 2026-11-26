@@ -343,7 +343,9 @@ fn info(app: &mut MailApp, ui: &mut Ui, t: &Tokens) {
             ui.horizontal(|ui| {
                 ui.add_space(12.0);
                 let label = if a.dav.is_some() { tl!("Calendar Server (connected)…") } else { tl!("Calendar Server…") };
-                let link = ui.link(label).on_hover_text(tl!("Read this account's calendars from iCloud, Fastmail or another calendar server"));
+                let link = ui.link(label).on_hover_text(tl!(
+                    "Show this account's calendars from iCloud, Fastmail or another calendar server, and add new appointments to them"
+                ));
                 if link.clicked() {
                     let _ = app.run("ui.dialog", json!({"name": "davServer", "account": a.id}));
                 }

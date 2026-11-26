@@ -528,6 +528,27 @@ fn a_home_on_another_host_is_asked_without_the_password_and_the_provider_s_numbe
     only_after_a_challenge(&world);
 }
 
+/// iCloud's numbered host asks for the password with a bare 401, and says nothing more to OPTIONS:
+/// as the provider's own, it is given the password, and then answers as a calendar server.
+#[test]
+fn icloud_s_numbered_host_asking_bare_still_gets_the_password() {
+    let shard = "https://p07-caldav.icloud.com";
+    let ok = secret();
+    let world = shard_world("https://caldav.icloud.com", shard)
+        .with(move |r| (r.url().starts_with(shard) && r.field("authorization") != Some(ok.expose())).then(|| Ok(challenge(&[]))));
+    let mut disc = search("ada@icloud.com", true, false);
+    let outcome = disc.run(&world, no_srv, never_asked);
+    assert_eq!(names(found(outcome).calendars().unwrap()), ["Work", "Shared"]);
+    // A host of the same shape that is not the provider's gets nothing.
+    let other = "https://p07-caldav.example.org";
+    let ok = secret();
+    let world = shard_world("https://dav.example.net", other)
+        .with(move |r| (r.url().starts_with(other) && r.field("authorization") != Some(ok.expose())).then(|| Ok(challenge(&[]))));
+    let mut disc = typed(Kind::Calendar, "https://dav.example.net/dav/");
+    let _ = disc.run(&world, no_srv, |_| true);
+    assert!(world.to("p07-caldav.example.org").iter().all(|s| !s.credential), "no password for a bare 401 of somebody else's host");
+}
+
 #[test]
 fn a_home_on_a_host_that_is_nobody_s_is_asked_about_first() {
     let world = shard_world("https://dav.example.net", "https://p07-caldav.example.org");
